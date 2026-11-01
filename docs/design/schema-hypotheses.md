@@ -1,6 +1,6 @@
 # Schema 假设清单
 
-状态：研究候选，尚未实现。来源 ID 见[文献地图](../research/literature-map.md)。
+状态：研究候选，尚未实现。当前主线与字段依据已集中到[Schema字段依据表](../../literature/organization/schema-field-matrix.md)，本页旧假设保留作背景。来源 ID 见[文献地图](../../literature/organization/legacy-catalog.md)。
 
 | 假设 | 依据／待比较论文 | 反例或风险 | 进入正式设计前需要什么 |
 | --- | --- | --- | --- |

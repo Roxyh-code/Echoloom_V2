@@ -1,0 +1,190 @@
+{
+  "scope": "仅纳入能影响字段、关系、证据或验证规则的来源",
+  "method": "目的性检索；下列为实际执行查询中的核心检索路径，非全部引擎日志",
+  "inclusion": [
+    "有可核对原文/摘要和明确概念或方法",
+    "能够映射到具体字段、关系、反例或校验需求"
+  ],
+  "exclusion": [
+    "陪伴疗效与一般写作体验",
+    "仅讨论生成榜单、无直接字段依据",
+    "二手介绍不能替代原论文",
+    "下载但正文不可读不得计作核读"
+  ],
+  "queries": [
+    {
+      "axis": "人格心理学",
+      "query": "McAdams Pals 2006 new big five fundamental principles integrative science personality characteristic adaptations life narratives pdf",
+      "retained": [
+        "P26"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "人格心理学",
+      "query": "Mischel Shoda 1995 cognitive affective system theory personality encodings expectancies affects goals competencies pdf",
+      "retained": [
+        "P25"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "人格心理学",
+      "query": "Schwartz 2012 overview theory basic values ten values article",
+      "retained": [
+        "S02"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "人格心理学",
+      "query": "Fleeson 2001 traits density distributions states personality pdf",
+      "retained": [
+        "S01"
+      ],
+      "note": [
+        "S16：PDF仅扫描，未做OCR；不纳入核心"
+      ],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "角色表示与模拟",
+      "query": "site.aclanthology.org personality character schema beliefs desires intentions relationships persona extraction",
+      "retained": [
+        "S03"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "角色表示与模拟",
+      "query": "site.aclanthology.org PERSONAGE personality generation language style Mairesse Walker 2007",
+      "retained": [
+        "S06"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "角色表示与模拟",
+      "query": "site.aclanthology.org Modeling Naive Psychology of Characters in Simple Commonsense Stories 2018",
+      "retained": [
+        "S04"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "角色表示与模拟",
+      "query": "site.aclanthology.org ATOMIC Atlas Machine Commonsense If Then Reasoning Sap 2019",
+      "retained": [
+        "S05"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "角色表示与模拟",
+      "query": "site.aaai.org Rao Georgeff 1995 BDI agents theory practice pdf",
+      "retained": [
+        "S07"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "记忆与评估",
+      "query": "site.aclanthology.org ToM dataset character beliefs desires intentions FANToM ToMi 2023",
+      "retained": [
+        "S08"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "抽取与证据来源",
+      "query": "site.aclanthology.org FactBank corpus event factuality source commitment Saurí Pustejovsky 2009",
+      "retained": [
+        "S09"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "抽取与证据来源",
+      "query": "site.w3.org TR prov-o wasDerivedFrom wasAttributedTo alternateOf specializationOf",
+      "retained": [
+        "S10"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "抽取与证据来源",
+      "query": "site.aclanthology.org TimeBank TimeML 2003 events temporal annotation",
+      "retained": [
+        "S11"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "抽取与证据来源",
+      "query": "site.vldb.org 2009 integrating conflicting data role source dependence Dong Berti-Equille Srivastava pdf",
+      "retained": [
+        "S12"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "记忆与评估",
+      "query": "site.aclanthology.org LongMemEval temporal reasoning knowledge updates abstention 2025",
+      "retained": [
+        "S13"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "记忆与评估",
+      "query": "site.arxiv.org/abs/ MemConflict 2026",
+      "retained": [
+        "S14"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    },
+    {
+      "axis": "抽取与证据来源",
+      "query": "site.aclanthology.org Artificial Relationships in Fiction Christou Tsoumakas -pdf",
+      "retained": [
+        "S15"
+      ],
+      "note": [],
+      "date": "2026-10-31"
+    }
+  ],
+  "excluded_topics": [
+    "LIGHT：本轮暂不扩展游戏环境",
+    "OpenDialKG：本轮不讨论通用知识图谱对话性能",
+    "Mem0：暂不引入产品内存实现",
+    "S16：扫描文本不可读；S01已覆盖相关概念"
+  ],
+  "verified_cross_references": [
+    {
+      "source": "S01",
+      "target": "P25",
+      "locator": "Whole Trait Theory的CAPS对比段落及参考文献"
+    },
+    {
+      "source": "S09",
+      "target": "S11",
+      "locator": "2009 Corpus documentation §5明确基于TimeBank/TimeML"
+    }
+  ],
+  "not_claimed": "不声称完整引用网络或穷尽检索；同主题不自动算互引"
+}

@@ -1,44 +1,30 @@
 # EchoLoom
 
-从多来源文本中重建虚构人物的人格模型，并将每项判断关联到原文证据。
+根据不完整、多来源文本重建虚构人物，并将人物判断关联到原文证据。
 
-## 当前阶段
+**当前任务：先为 Personality Schema 和 Evidence Schema 建立理论与方法依据。** 不把角色扮演成绩等同于重建正确性，也不开发真人心理测量工具。抽取原型尚未实现。
 
-研究与问题定义。已完成 39 篇候选的第一轮证据综合，其中 37 篇定向核读全文、2 篇仅核对摘要；逐页精读与复现尚未完成。尚未实现抽取原型。Python、Pydantic、SQLite 是原型候选技术，待研究和小样本验证后确定。
+## 先从这里看
 
-当前闭环：多份文本 → 人物与原文证据 → 情境化人格档案 → 用户审核 → 质量评估。
-
-## 从哪里开始
-
-- [总体路线图](docs/roadmap.md)：所有阶段、依赖与完成标准。
-- [当前任务板](docs/tasks.md)：下一步具体工作与真实状态。
-- [研究计划](docs/research/plan.md)：研究问题、方法和交付物。
-- [39 篇文献地图](docs/research/literature-map.md)：候选论文、作者网络和已核实引用。
-- [文献结论报告](docs/research/review/report.md)：9 张图、50 条可追溯数字、研究结论和实验建议。
-- [离线交互报告与重建说明](docs/research/review/README.md)：逐篇检索、筛选与数据下载。
-- [精读队列](docs/research/reading-queue.md)：顺序、阅读问题和进度。
-- [第一篇精读](docs/research/papers/P27-character-simulation.md)：问题、方法与待核实事项。
+- **[文献工作入口](literature/README.md)**：目录、当前报告、数据和下一步计划。
+- **[Schema依据报告](literature/output/schema-foundations/report.md)**：围绕四条研究线的结论。
+- **[字段依据表](literature/organization/schema-field-matrix.md)**：每项候选字段为什么需要、依据是什么、不能推出什么。
+- **[下一步计划](literature/plans/next-steps.md)**：概念词典→原创样例→字段裁剪→Schema v0.1。
 
 ## 目录
 
 ```text
-docs/
-  roadmap.md                  总体工作框架
-  tasks.md                    当前任务与完成记录
-  research/                   研究计划、文献地图、精读笔记
-  design/                     概念、Schema 假设与技术方案
-  evaluation/                 标注与评估协议
-  decisions/                  设计决策及依据
-  meetings/                   专家讨论准备与反馈
-schemas/                      后续 JSON Schema 与合法示例
-data/                         原创样例与数据说明
-experiments/                  实验协议、配置与结果记录
-src/echoloom/                 后续 Python 原型
-tests/                        后续数据约束与行为回归测试
+literature/      全部文献工作；整理、数据、产出、计划、原文与脚本
+docs/            项目路线、任务、设计、评估及讨论准备
+schemas/         研究与手工验证后再正式化的Schema
+data/            后续原创角色和标注样例（区别于literature/data文献数据）
+experiments/     后续方法比较与实验记录
+src/echoloom/    后续抽取原型
+tests/          后续数据约束与行为验证
 ```
 
-各目录的 README 说明用途与进入条件；当前不是已可运行的应用。`work/`、`outputs/` 是本地临时／交付副本目录，不纳入 Git。视频、语音、Avatar 和完整平台在文本重建验证后再安排。
+旧39篇宽范围报告已归档到 `literature/output/archive-v1/`，不作为当前阅读顺序。项目总体框架见[路线图](docs/roadmap.md)与[任务板](docs/tasks.md)。本地 `work/` 为临时文件，`outputs/` 为可下载交付副本；Git内的规范报告位置为 `literature/output/`。下载的原始PDF与提取文本不上传Git。
 
-## 计划来源
+## 最初目标
 
-[EchoLoom 开发计划与研究讨论](https://chatgpt.com/share/6ae69724-ea88-83ea-9d19-9ab08b79b911)
+[最初的项目与研究讨论](https://chatgpt.com/share/6ae69724-ea88-83ea-9d19-9ab08b79b911)。当前优先目标按 `literature/plans/next-steps.md` 推进；视频、语音与完整平台在文本重建得到验证后另行安排。

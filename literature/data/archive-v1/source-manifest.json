@@ -1,0 +1,390 @@
+[
+  {
+    "id": "P01",
+    "priority": "B",
+    "title": "RoleLLM: Benchmarking, Eliciting, and Enhancing Role-Playing Abilities of Large Language Models",
+    "url": "https://aclanthology.org/2024.findings-acl.878/",
+    "pdf": "https://aclanthology.org/2024.findings-acl.878.pdf",
+    "access": "full_text_acquired",
+    "pages": 35,
+    "characters": 112512
+  },
+  {
+    "id": "P02",
+    "priority": "A",
+    "title": "FActScore: Fine-grained Atomic Evaluation of Factual Precision in Long Form Text Generation",
+    "url": "https://aclanthology.org/2023.emnlp-main.741/",
+    "pdf": "https://aclanthology.org/2023.emnlp-main.741.pdf",
+    "access": "full_text_acquired",
+    "pages": 25,
+    "characters": 97291
+  },
+  {
+    "id": "P03",
+    "priority": "B",
+    "title": "An Introduction to the Five-Factor Model and Its Applications",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/1635039/",
+    "pdf": "https://2964193.fs1.hubspotusercontent-na3.net/hubfs/2964193/McCrae_et_al-1992-Journal_of_Personality.pdf",
+    "access": "full_text_acquired",
+    "pages": 42,
+    "characters": 102389
+  },
+  {
+    "id": "P04",
+    "priority": "B",
+    "title": "Personalizing Dialogue Agents: I have a dog, do you have pets too?",
+    "url": "https://aclanthology.org/P18-1205/",
+    "pdf": "https://aclanthology.org/P18-1205.pdf",
+    "access": "full_text_acquired",
+    "pages": 10,
+    "characters": 38913
+  },
+  {
+    "id": "P05",
+    "priority": "B",
+    "title": "Generative Agents: Interactive Simulacra of Human Behavior",
+    "url": "https://arxiv.org/abs/2304.03442",
+    "pdf": "https://arxiv.org/pdf/2304.03442",
+    "access": "full_text_acquired",
+    "pages": 22,
+    "characters": 130391
+  },
+  {
+    "id": "P06",
+    "priority": "A",
+    "title": "CHIRON: Rich Character Representations in Long-Form Narratives",
+    "url": "https://aclanthology.org/2024.findings-emnlp.499/",
+    "pdf": "https://aclanthology.org/2024.findings-emnlp.499.pdf",
+    "access": "full_text_acquired",
+    "pages": 25,
+    "characters": 91436
+  },
+  {
+    "id": "P07",
+    "priority": "A",
+    "title": "BookWorm: A Dataset for Character Description and Analysis",
+    "url": "https://aclanthology.org/2024.findings-emnlp.258/",
+    "pdf": "https://aclanthology.org/2024.findings-emnlp.258.pdf",
+    "access": "full_text_acquired",
+    "pages": 30,
+    "characters": 111071
+  },
+  {
+    "id": "P08",
+    "priority": "A",
+    "title": "Personality Understanding of Fictional Characters during Book Reading",
+    "url": "https://arxiv.org/abs/2305.10156",
+    "pdf": "https://arxiv.org/pdf/2305.10156",
+    "access": "full_text_acquired",
+    "pages": 17,
+    "characters": 65900
+  },
+  {
+    "id": "P09",
+    "priority": "A",
+    "title": "“Let Your Characters Tell Their Story”: A Dataset for Character-Centric Narrative Understanding",
+    "url": "https://arxiv.org/abs/2109.05438",
+    "pdf": "https://arxiv.org/pdf/2109.05438",
+    "access": "full_text_acquired",
+    "pages": 19,
+    "characters": 75077
+  },
+  {
+    "id": "P10",
+    "priority": "C",
+    "title": "Learning Latent Personas of Film Characters",
+    "url": "https://aclanthology.org/P13-1035/",
+    "pdf": "https://aclanthology.org/P13-1035.pdf",
+    "access": "full_text_acquired",
+    "pages": 10,
+    "characters": 39424
+  },
+  {
+    "id": "P11",
+    "priority": "B",
+    "title": "Modeling Protagonist Emotions for Emotion-Aware Storytelling",
+    "url": "https://aclanthology.org/2020.emnlp-main.426/",
+    "pdf": "https://aclanthology.org/2020.emnlp-main.426.pdf",
+    "access": "full_text_acquired",
+    "pages": 18,
+    "characters": 68383
+  },
+  {
+    "id": "P12",
+    "priority": "B",
+    "title": "Feuding Families and Former Friends: Unsupervised Learning for Dynamic Fictional Relationships",
+    "url": "https://aclanthology.org/N16-1180/",
+    "pdf": "https://aclanthology.org/N16-1180.pdf",
+    "access": "full_text_acquired",
+    "pages": 11,
+    "characters": 42434
+  },
+  {
+    "id": "P13",
+    "priority": "A",
+    "title": "Enabling Large Language Models to Generate Text with Citations",
+    "url": "https://arxiv.org/abs/2305.14627",
+    "pdf": "https://arxiv.org/pdf/2305.14627",
+    "access": "full_text_acquired",
+    "pages": 24,
+    "characters": 97970
+  },
+  {
+    "id": "P14",
+    "priority": "B",
+    "title": "ALiiCE: Evaluating Positional Fine-grained Citation Generation",
+    "url": "https://aclanthology.org/2025.naacl-long.23/",
+    "pdf": "https://aclanthology.org/2025.naacl-long.23.pdf",
+    "access": "full_text_acquired",
+    "pages": 17,
+    "characters": 67255
+  },
+  {
+    "id": "P15",
+    "priority": "A",
+    "title": "FABLES: Evaluating Faithfulness and Content Selection in Book-length Summarization",
+    "url": "https://arxiv.org/abs/2404.01261",
+    "pdf": "https://arxiv.org/pdf/2404.01261",
+    "access": "full_text_acquired",
+    "pages": 41,
+    "characters": 132861
+  },
+  {
+    "id": "P16",
+    "priority": "B",
+    "title": "Dialogue Natural Language Inference",
+    "url": "https://aclanthology.org/P19-1363/",
+    "pdf": "https://aclanthology.org/P19-1363.pdf",
+    "access": "full_text_acquired",
+    "pages": 11,
+    "characters": 41185
+  },
+  {
+    "id": "P17",
+    "priority": "B",
+    "title": "Will I Sound Like Me? Improving Persona Consistency in Dialogues through Pragmatic Self-Consciousness",
+    "url": "https://aclanthology.org/2020.emnlp-main.65/",
+    "pdf": "https://aclanthology.org/2020.emnlp-main.65.pdf",
+    "access": "full_text_acquired",
+    "pages": 13,
+    "characters": 52267
+  },
+  {
+    "id": "P18",
+    "priority": "B",
+    "title": "PersonaLLM: Investigating the Ability of Large Language Models to Express Personality Traits",
+    "url": "https://arxiv.org/abs/2305.02547",
+    "pdf": "https://arxiv.org/pdf/2305.02547",
+    "access": "full_text_acquired",
+    "pages": 23,
+    "characters": 84224
+  },
+  {
+    "id": "P19",
+    "priority": "A",
+    "title": "InCharacter: Evaluating Personality Fidelity in Role-Playing Agents through Psychological Interviews",
+    "url": "https://aclanthology.org/2024.acl-long.102/",
+    "pdf": "https://aclanthology.org/2024.acl-long.102.pdf",
+    "access": "full_text_acquired",
+    "pages": 34,
+    "characters": 132824
+  },
+  {
+    "id": "P20",
+    "priority": "B",
+    "title": "CoSER: A Comprehensive Literary Dataset and Framework for Training and Evaluating LLM Role-Playing and Persona Simulation",
+    "url": "https://arxiv.org/abs/2502.09082",
+    "pdf": "https://arxiv.org/pdf/2502.09082",
+    "access": "full_text_acquired",
+    "pages": 44,
+    "characters": 134168
+  },
+  {
+    "id": "P21",
+    "priority": "A",
+    "title": "PersonaEval: Are LLM Evaluators Human Enough to Judge Role-Play?",
+    "url": "https://arxiv.org/abs/2508.10014",
+    "pdf": "https://arxiv.org/pdf/2508.10014",
+    "access": "full_text_acquired",
+    "pages": 23,
+    "characters": 73666
+  },
+  {
+    "id": "P22",
+    "priority": "A",
+    "title": "Rethinking Role-Playing Evaluation: Anonymous Benchmarking and a Systematic Study of Personality Effects",
+    "url": "https://arxiv.org/abs/2603.03915",
+    "pdf": "https://arxiv.org/pdf/2603.03915",
+    "access": "full_text_acquired",
+    "pages": 14,
+    "characters": 53008
+  },
+  {
+    "id": "P23",
+    "priority": "B",
+    "title": "PICon: A Multi-Turn Interrogation Framework for Evaluating Persona Agent Consistency",
+    "url": "https://arxiv.org/abs/2603.25620",
+    "pdf": "https://arxiv.org/pdf/2603.25620",
+    "access": "full_text_acquired",
+    "pages": 29,
+    "characters": 102375
+  },
+  {
+    "id": "P24",
+    "priority": "B",
+    "title": "BOOKCOREF: Coreference Resolution at Book Scale",
+    "url": "https://aclanthology.org/2025.acl-long.1197/",
+    "pdf": "https://aclanthology.org/2025.acl-long.1197.pdf",
+    "access": "full_text_acquired",
+    "pages": 19,
+    "characters": 78309
+  },
+  {
+    "id": "P25",
+    "priority": "A",
+    "title": "A Cognitive-Affective System Theory of Personality: Reconceptualizing Situations, Dispositions, Dynamics, and Invariance in Personality Structure",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/7740090/",
+    "pdf": "https://www.timothydavidson.com/Library/Articles/CurriculumArticles-coursework/5.Mischel-1995-Cognitive-AffectiveSystemTheoryOfPersonality.pdf",
+    "access": "fetch_failed",
+    "error": "HTTP Error 509: Bandwidth Limit Exceeded"
+  },
+  {
+    "id": "P26",
+    "priority": "B",
+    "title": "A New Big Five: Fundamental Principles for an Integrative Science of Personality",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/16594837/",
+    "pdf": "https://people.wku.edu/richard.miller/new%20big%20five.pdf",
+    "access": "fetch_failed",
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>"
+  },
+  {
+    "id": "P27",
+    "priority": "A",
+    "title": "Multi-Agent Based Character Simulation for Story Writing",
+    "url": "https://aclanthology.org/2025.in2writing-1.9/",
+    "pdf": "https://aclanthology.org/2025.in2writing-1.9.pdf",
+    "access": "full_text_acquired",
+    "pages": 22,
+    "characters": 63494
+  },
+  {
+    "id": "P28",
+    "priority": "A",
+    "title": "Visual Story-Writing: Writing by Manipulating Visual Representations of Stories",
+    "url": "https://zixin.ca/data/pdf/visualstorywriting.pdf",
+    "pdf": "https://zixin.ca/data/pdf/visualstorywriting.pdf",
+    "access": "full_text_acquired",
+    "pages": 15,
+    "characters": 96090
+  },
+  {
+    "id": "P29",
+    "priority": "A",
+    "title": "Making the Write Connections: Linking Writing Support Tools with Writer’s Needs",
+    "url": "https://arxiv.org/abs/2502.13320",
+    "pdf": "https://arxiv.org/pdf/2502.13320",
+    "access": "full_text_acquired",
+    "pages": 21,
+    "characters": 117967
+  },
+  {
+    "id": "P30",
+    "priority": "B",
+    "title": "Nabokov’s Cards: An AI Assisted Prewriting System to Support Bottom-Up Creative Writing",
+    "url": "https://zixin.ca/data/pdf/Nabakov_s_Cards_C_C_2025.pdf",
+    "pdf": "https://zixin.ca/data/pdf/Nabakov_s_Cards_C_C_2025.pdf",
+    "access": "full_text_acquired",
+    "pages": 14,
+    "characters": 83255
+  },
+  {
+    "id": "P31",
+    "priority": "B",
+    "title": "Large Language Lovers: Lived Experiences of Negotiating Agency and Platform Control in AI Companionship",
+    "url": "https://arxiv.org/abs/2601.13188",
+    "pdf": "https://arxiv.org/pdf/2601.13188",
+    "access": "full_text_acquired",
+    "pages": 32,
+    "characters": 118082
+  },
+  {
+    "id": "P32",
+    "priority": "B",
+    "title": "Character-LLM: A Trainable Agent for Role-Playing",
+    "url": "https://aclanthology.org/2023.emnlp-main.814/",
+    "pdf": "https://aclanthology.org/2023.emnlp-main.814.pdf",
+    "access": "full_text_acquired",
+    "pages": 35,
+    "characters": 173110
+  },
+  {
+    "id": "P33",
+    "priority": "B",
+    "title": "Agents’ Room: Narrative Generation through Multi-step Collaboration",
+    "url": "https://arxiv.org/abs/2410.02603",
+    "pdf": "https://arxiv.org/pdf/2410.02603",
+    "access": "full_text_acquired",
+    "pages": 34,
+    "characters": 150042
+  },
+  {
+    "id": "P34",
+    "priority": "B",
+    "title": "IBSEN: Director-Actor Agent Collaboration for Controllable and Interactive Drama Script Generation",
+    "url": "https://aclanthology.org/2024.acl-long.88/",
+    "pdf": "https://aclanthology.org/2024.acl-long.88.pdf",
+    "access": "full_text_acquired",
+    "pages": 13,
+    "characters": 62851
+  },
+  {
+    "id": "P35",
+    "priority": "B",
+    "title": "Narrative Planning: Balancing Plot and Character",
+    "url": "https://faculty.cc.gatech.edu/~riedl/pubs/jair.pdf",
+    "pdf": "https://arxiv.org/pdf/1401.3841",
+    "access": "full_text_acquired",
+    "pages": 52,
+    "characters": 148700
+  },
+  {
+    "id": "P36",
+    "priority": "C",
+    "title": "TaleBrush: Sketching Stories with Generative Pretrained Language Models",
+    "url": "https://cond.org/talebrush.html",
+    "pdf": "https://cond.org/talebrush.pdf",
+    "access": "full_text_acquired",
+    "pages": 19,
+    "characters": 123623
+  },
+  {
+    "id": "P37",
+    "priority": "B",
+    "title": "DramatVis Personae: Visual Text Analytics for Identifying Social Biases in Creative Writing",
+    "url": "https://www.cs.au.dk/~elm/pdf/dvp.pdf",
+    "pdf": "https://www.cs.au.dk/~elm/pdf/dvp.pdf",
+    "access": "full_text_acquired",
+    "pages": 17,
+    "characters": 102619
+  },
+  {
+    "id": "P38",
+    "priority": "C",
+    "title": "Co-Writing Screenplays and Theatre Scripts with Language Models: An Evaluation by Industry Professionals",
+    "url": "https://arxiv.org/abs/2209.14958",
+    "pdf": "https://arxiv.org/pdf/2209.14958",
+    "access": "full_text_acquired",
+    "pages": 102,
+    "characters": 195225
+  },
+  {
+    "id": "P39",
+    "priority": "B",
+    "title": "Narrative Keyframing for Generative Creative Writing",
+    "url": "https://arxiv.org/abs/2608.10337",
+    "pdf": "https://arxiv.org/pdf/2608.10337",
+    "access": "full_text_acquired",
+    "pages": 19,
+    "characters": 105708
+  }
+]

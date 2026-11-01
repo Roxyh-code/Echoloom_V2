@@ -27,6 +27,11 @@ htmlcov/
 /work/
 /outputs/
 
+# Downloaded literature originals and text extracts stay local
+/literature/sources/pdf/
+/literature/sources/text/
+/literature/sources/html/
+
 # OS files
 .DS_Store
 Thumbs.db

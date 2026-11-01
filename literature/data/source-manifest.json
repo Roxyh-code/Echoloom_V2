@@ -1,0 +1,184 @@
+[
+  {
+    "id": "P25",
+    "url": "https://www.david-dai.net/s/Mischel-Shoda-1995.pdf",
+    "format": "pdf",
+    "sha256": "6f6cf3d2b26f909b9cdc4b0bd183e3f9c21fbb660cd72159a74cf5692697e584",
+    "pages": 23,
+    "characters": 144272,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "P26",
+    "url": "https://www.e-stimate.dk/wp-content/uploads/2019/09/McAdams-Fundamental-Principles-for-an-Integrative-Science-of-Personality.pdf",
+    "format": "html",
+    "sha256": "4810ea3739e3fcac6c23bff45f9a1c1e5b292bbd27889e37f5c7bd7710a51bd8",
+    "pages": null,
+    "characters": 960,
+    "access": "not_readable_locally",
+    "date": "2026-10-31",
+    "note": "HTTP响应并非可读论文正文；不能计作全文取得",
+    "web_access": "已通过网页工具核读原始全文的指定章节；本地下载失败或正文不可读"
+  },
+  {
+    "id": "S01",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4472377/",
+    "format": "html",
+    "sha256": "0adb7f19f06acd9b4f565e14c4f8a47c2c7f301f58a16cf6830dc0354c6f3158",
+    "pages": null,
+    "characters": 147,
+    "access": "not_readable_locally",
+    "date": "2026-10-31",
+    "note": "HTTP响应并非可读论文正文；不能计作全文取得",
+    "web_access": "已通过网页工具核读原始全文的指定章节；本地下载失败或正文不可读"
+  },
+  {
+    "id": "S02",
+    "url": "https://scholarworks.gvsu.edu/cgi/viewcontent.cgi?article=1116&context=orpc",
+    "access": "failed",
+    "error": "HTTP Error 403: Forbidden",
+    "web_access": "仅核对出版页摘要，全文未取得",
+    "alternate_download": "https://files01.core.ac.uk/download/pdf/10687025.pdf",
+    "alternate_result": "本地HTTP522；网页工具HTTP403，仍仅摘要"
+  },
+  {
+    "id": "S03",
+    "url": "https://aclanthology.org/2025.naacl-industry.24.pdf",
+    "format": "pdf",
+    "sha256": "b4b184d2a45bc561f9d50821f08e9df2f5714e9f7331c40a8882c24b873fecc0",
+    "pages": 17,
+    "characters": 66864,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S04",
+    "url": "https://aclanthology.org/P18-1213.pdf",
+    "format": "pdf",
+    "sha256": "19fe0d0f7989d4d5955aaa7a84e9d54a1b09e2ffcea05da63975acecacdf1936",
+    "pages": 11,
+    "characters": 44869,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S05",
+    "url": "https://maartensap.com/pdfs/sap2019atomic.pdf",
+    "format": "pdf",
+    "sha256": "49455ac15241dda08b9a7d18ed425bb16532962d3cf05dcf0b029c9f4be56f74",
+    "pages": 9,
+    "characters": 40457,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S06",
+    "url": "https://aclanthology.org/P07-1063.pdf",
+    "format": "pdf",
+    "sha256": "a6339e69aee6ad78b4ce11d26da339555f8b841934a6d756823d54c31f5abd62",
+    "pages": 8,
+    "characters": 38847,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S07",
+    "url": "https://cdn.aaai.org/ICMAS/1995/ICMAS95-042.pdf",
+    "format": "pdf",
+    "sha256": "5c9cfa164702034a0a32e58169632947ada2ce967543065ca545a9341d87b60d",
+    "pages": 8,
+    "characters": 45867,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S08",
+    "url": "https://aclanthology.org/2023.emnlp-main.890.pdf",
+    "format": "pdf",
+    "sha256": "d4083f829c01c9a4f59114b7bbc9583f060608109e6ad24a4b2298191707b08f",
+    "pages": 17,
+    "characters": 76104,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S09",
+    "url": "https://www.cs.brandeis.edu/~roser/pubs/fb_annotGuidelines.pdf",
+    "access": "failed",
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain (_ssl.c:1010)>",
+    "web_access": "已通过网页工具核读原始全文的指定章节；本地下载失败或正文不可读"
+  },
+  {
+    "id": "S10",
+    "url": "https://www.w3.org/TR/2013/REC-prov-o-20130430/",
+    "format": "html",
+    "sha256": "6b96671ab84faf12ce3f041aca12c3f93a6df2ed242348810743179a68e69555",
+    "pages": null,
+    "characters": 188115,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S11",
+    "url": "https://timeml.github.io/site/timebank/documentation-1.2.html",
+    "format": "html",
+    "sha256": "9494e3b96ea2c74de723c1ab48a425cfe0f6d298baafa00f6ad949c2e4004902",
+    "pages": null,
+    "characters": 11962,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S12",
+    "url": "https://www.vldb.org/pvldb/vol2/vldb09-pvldb47.pdf",
+    "format": "pdf",
+    "sha256": "17d74253685800f0d2e2bc758b7e3a64b3dfb2beafa3ad0764112cd0771ed4ba",
+    "pages": 12,
+    "characters": 74178,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S13",
+    "url": "https://arxiv.org/pdf/2410.10813v2",
+    "format": "pdf",
+    "sha256": "05c5d055201466a241a56e082cdd02d39ad566fa04b3804891983e4e069a3fda",
+    "pages": 28,
+    "characters": 105374,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S14",
+    "url": "https://arxiv.org/pdf/2605.20926v1",
+    "format": "pdf",
+    "sha256": "1918dd32c20affd501ac314ab4f1c5b67ab71dc2178784d31b6596030abbebce",
+    "pages": 33,
+    "characters": 117083,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S15",
+    "url": "https://aclanthology.org/2025.latechclfl-1.13.pdf",
+    "format": "pdf",
+    "sha256": "068f98e99ea0d9b9e3b69423a985f106516b5be7626a22e17dba9ce3f0f0b616",
+    "pages": 18,
+    "characters": 50039,
+    "access": "full_text_acquired",
+    "date": "2026-10-31"
+  },
+  {
+    "id": "S16",
+    "url": "https://personality-project.org/revelle/syllabi/classreadings/fleeson.2001.pdf",
+    "format": "pdf",
+    "sha256": "72c783e353d26ad669728670f979d9625e0d22a6609c884d47d18637d98ef9e1",
+    "pages": 17,
+    "characters": 364,
+    "access": "not_readable_locally",
+    "date": "2026-10-31",
+    "note": "HTTP响应并非可读论文正文；不能计作全文取得",
+    "decision": "不纳入本轮核心；PDF无可读文本，WTT已覆盖其核心概念"
+  }
+]
