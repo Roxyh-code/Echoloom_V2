@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-研究与问题定义。已建立 39 篇候选文献地图，正在精读第一篇 P27；尚未实现抽取原型。Python、Pydantic、SQLite 是原型候选技术，待研究和小样本验证后确定。
+研究与问题定义。已完成 39 篇候选的第一轮证据综合，其中 37 篇定向核读全文、2 篇仅核对摘要；逐页精读与复现尚未完成。尚未实现抽取原型。Python、Pydantic、SQLite 是原型候选技术，待研究和小样本验证后确定。
 
 当前闭环：多份文本 → 人物与原文证据 → 情境化人格档案 → 用户审核 → 质量评估。
 
@@ -14,6 +14,8 @@
 - [当前任务板](docs/tasks.md)：下一步具体工作与真实状态。
 - [研究计划](docs/research/plan.md)：研究问题、方法和交付物。
 - [39 篇文献地图](docs/research/literature-map.md)：候选论文、作者网络和已核实引用。
+- [文献结论报告](docs/research/review/report.md)：9 张图、50 条可追溯数字、研究结论和实验建议。
+- [离线交互报告与重建说明](docs/research/review/README.md)：逐篇检索、筛选与数据下载。
 - [精读队列](docs/research/reading-queue.md)：顺序、阅读问题和进度。
 - [第一篇精读](docs/research/papers/P27-character-simulation.md)：问题、方法与待核实事项。
 
