@@ -118,3 +118,67 @@ def test_adapter_calls_official_sdk_and_uses_source_for_edit(monkeypatch):
     assert OpenAIImages(settings).render("hair", b"original") == b"image"
     assert calls[-1]["image"] == ("portrait.png", b"original", "image/png")
     assert "response_format" not in calls[-1]  # GPT image models return b64 directly.
+
+
+@pytest.mark.parametrize(
+    ("code", "param", "message", "expected"),
+    [
+        ("moderation_blocked", None, "blocked by safety system", "内容审核"),
+        (
+            None,
+            None,
+            "Your organization must be verified to use this model",
+            "组织验证",
+        ),
+        ("billing_hard_limit_reached", None, "billing limit", "消费上限"),
+        ("unsupported_parameter", "size", "Unsupported size", "param=size"),
+        (None, "model", "unsupported model", "图片模型"),
+    ],
+)
+def test_image_api_errors_are_actionable_and_do_not_leak_secrets(
+    monkeypatch, caplog, code, param, message, expected
+):
+    import httpx
+    from openai import BadRequestError
+
+    from echoloom.providers import ProviderError
+
+    secret = "sk-test-secret-do-not-print"
+    private_prompt = "private-character-description"
+
+    class Client:
+        def __init__(self, **kwargs):
+            self.images = SimpleNamespace(generate=self.generate)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def generate(self, **kwargs):
+            response = httpx.Response(
+                400,
+                request=httpx.Request(
+                    "POST", "https://api.openai.com/v1/images/generations"
+                ),
+                headers={"x-request-id": "req_aabbccdd"},
+            )
+            body = {
+                "code": code,
+                "param": param,
+                "message": message + " " + secret + " " + private_prompt,
+            }
+            raise BadRequestError(str(body), response=response, body=body)
+
+    monkeypatch.setattr("echoloom.providers.OpenAI", Client)
+    settings = Settings(
+        _env_file=None, llm_api_key=secret, image_model="configured-image-model"
+    )
+    with pytest.raises(ProviderError) as caught:
+        OpenAIImages(settings).render(private_prompt)
+    assert expected in str(caught.value)
+    assert "HTTP 400" in str(caught.value)
+    assert "req_aabbccdd" in str(caught.value)
+    assert secret not in str(caught.value) + caplog.text
+    assert private_prompt not in str(caught.value) + caplog.text

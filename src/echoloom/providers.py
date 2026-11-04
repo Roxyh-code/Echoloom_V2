@@ -3,10 +3,11 @@
 import base64
 import json
 import logging
+import re
 import time
 from typing import Protocol
 
-from openai import OpenAI, OpenAIError
+from openai import APIStatusError, OpenAI, OpenAIError
 from pydantic import ValidationError
 
 from .config import Settings
@@ -172,6 +173,114 @@ class OpenAIText:
         return self._request(messages)
 
 
+def image_error(exc: OpenAIError) -> ProviderError:
+    """Explain provider failures without echoing prompts, credentials or raw bodies."""
+    body = getattr(exc, "body", None)
+    body = body if isinstance(body, dict) else {}
+    if isinstance(body.get("error"), dict):
+        body = body["error"]
+    code = body.get("code") if isinstance(body.get("code"), str) else None
+    param = body.get("param") if isinstance(body.get("param"), str) else None
+    # Inspect remote text only to choose a fixed explanation; never emit it.
+    message = str(body.get("message", "")).lower()
+    status = exc.status_code if isinstance(exc, APIStatusError) else None
+    if code in {
+        "content_policy_violation",
+        "moderation_blocked",
+        "safety_violations",
+    } or any(
+        word in message
+        for word in (
+            "safety system",
+            "content policy",
+            "moderation",
+            "safety_violations",
+        )
+    ):
+        reason = "图片请求被 OpenAI 的内容审核拒绝。请检查角色描述，按平台规则调整；不要连续重试同一请求。"
+    elif "verif" in message and "organi" in message:
+        reason = "OpenAI 要求先完成组织验证，才能使用此图片模型。请到 API 平台检查组织验证状态。"
+    elif (
+        code
+        in {
+            "insufficient_quota",
+            "billing_hard_limit_reached",
+            "billing_limit_user_error",
+        }
+        or "billing" in message
+    ):
+        reason = "OpenAI API 额度不足或达到消费上限，请检查 API 账单和项目预算。"
+    elif status == 401:
+        reason = "OpenAI 未接受当前 API 密钥，请检查服务端图片密钥或复用的文字密钥。"
+    elif status == 403:
+        reason = (
+            "当前 OpenAI 项目没有此图片操作的权限，请检查模型权限、组织状态和地区支持。"
+        )
+    elif status == 429:
+        reason = "图片服务达到调用限制，请检查 API 额度和限流信息，稍后再试。"
+    elif code == "model_not_found" or status == 404:
+        reason = "图片模型不存在或当前项目无权使用，请核对 IMAGE_MODEL 和模型访问权限。"
+    elif param == "model":
+        reason = "OpenAI 不接受配置的图片模型，请核对 IMAGE_MODEL 是否支持当前生成或编辑操作。"
+    elif status == 400:
+        reason = "OpenAI 拒绝了图片请求。请根据下方错误代码和参数检查模型支持情况；当前信息还不能确定具体原因。"
+    elif type(exc).__name__ == "APITimeoutError":
+        reason = "OpenAI 图片请求超时，结果尚未保存。请检查网络或调整 API_TIMEOUT_SECONDS；再次请求可能产生费用。"
+    elif type(exc).__name__ == "APIConnectionError":
+        reason = "无法连接 OpenAI 图片服务，请检查本机网络和代理配置。"
+    else:
+        reason = "OpenAI 图片服务调用失败，请稍后检查服务状态再试。"
+    # Allow only known metadata, never arbitrary remote strings that could echo input.
+    known_codes = {
+        "content_policy_violation",
+        "moderation_blocked",
+        "safety_violations",
+        "insufficient_quota",
+        "billing_hard_limit_reached",
+        "billing_limit_user_error",
+        "model_not_found",
+        "invalid_api_key",
+        "invalid_request_error",
+        "invalid_value",
+        "unsupported_parameter",
+        "rate_limit_exceeded",
+    }
+    known_params = {
+        "model",
+        "prompt",
+        "image",
+        "n",
+        "size",
+        "quality",
+        "response_format",
+        "output_format",
+        "moderation",
+        "background",
+    }
+    safe_code = code if isinstance(code, str) and code in known_codes else "unreported"
+    safe_param = (
+        param if isinstance(param, str) and param in known_params else "unreported"
+    )
+    request_id = getattr(exc, "request_id", None)
+    safe_id = (
+        request_id
+        if isinstance(request_id, str)
+        and re.fullmatch(r"req_[a-fA-F0-9]{8,64}", request_id)
+        else "unreported"
+    )
+    logger.warning(
+        "provider=openai kind=image success=false error_type=%s status=%s code=%s param=%s request_id=%s",
+        type(exc).__name__,
+        status,
+        safe_code,
+        safe_param,
+        safe_id,
+    )
+    return ProviderError(
+        f"{reason}（HTTP {status or '未知'}；code={safe_code}；param={safe_param}；request_id={safe_id}）"
+    )
+
+
 class OpenAIImages:
     def __init__(self, settings: Settings):
         self.settings = settings
@@ -213,11 +322,13 @@ class OpenAIImages:
                 time.monotonic() - started,
             )
             return data
-        except (OpenAIError, ValueError, IndexError, TypeError) as exc:
+        except OpenAIError as exc:
+            raise image_error(exc) from None
+        except (ValueError, IndexError, TypeError) as exc:
             logger.warning(
                 "provider=openai kind=image success=false error_type=%s",
                 type(exc).__name__,
             )
             raise ProviderError(
-                "图片服务请求失败，请检查模型是否支持此操作后重试。"
+                "图片服务返回了无效的图片数据，请检查模型输出格式。"
             ) from None
