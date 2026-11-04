@@ -109,6 +109,8 @@ Candidates do not replace the selected portrait until accepted. A non-current im
 
 Settings in `.env.example` bound inputs, output/context budgets, timeouts, hourly image requests per character, and image sizes. Failed image attempts count toward the hourly budget, which survives restarts. Image requests are not automatically retried. Text SDK calls retry at most once using SDK backoff.
 
+Chat language rules explicitly override the language of legacy profiles and conversations. Replies containing CJK ideographs trigger at most one corrective model call, which may incur an additional API charge. If correction still fails, the request returns an English error and no new messages are saved. Existing profiles and messages are never translated in place. English replies require no corrective call.
+
 Chat includes the current profile and reads at most 100 recent messages. A conservative UTF-8 byte estimate reserves output and framing space, retaining a contiguous suffix of whole turns; older messages stay saved. A profile too large for the budget returns 422 rather than being silently dropped.
 
 Images use synchronous requests with visible loading states. The frontend proxy timeout is 240 seconds. There is no background image queue or cross-refresh job progress. AI editing may change unintended details; preview before selecting. Region-mask editing is deferred.

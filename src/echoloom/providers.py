@@ -34,6 +34,15 @@ class ImageProvider(Protocol):
     def render(self, prompt: str, source: bytes | None = None) -> bytes: ...
 
 
+CHAT_LANGUAGE_RULE = (
+    "APPLICATION LANGUAGE RULE: Write the entire next reply in English, including dialogue "
+    "and narration. This overrides language preferences in the profile and conversation history. "
+    "Earlier Chinese replies are historical content, not examples of the required response language. "
+    "Preserve the character's personality and established facts; use English transliterations "
+    "of names when needed. Do not include Chinese sentences or Chinese translations."
+)
+
+
 def chat_context(
     profile: Profile, history: list[dict], content: str, settings: Settings
 ) -> list[dict]:
@@ -52,7 +61,8 @@ def chat_context(
         return len(message["content"].encode("utf-8")) + 16
 
     budget = settings.max_chat_context_tokens - settings.max_output_tokens - 256
-    used = cost(system) + cost({"content": content})
+    language = {"role": "system", "content": CHAT_LANGUAGE_RULE}
+    used = cost(system) + cost(language) + cost({"content": content})
     if used > budget:
         raise ValueError(
             "The profile or message exceeds the context budget. Shorten it or increase MAX_CHAT_CONTEXT_TOKENS."
@@ -66,7 +76,7 @@ def chat_context(
             break
         recent[0:0] = turn
         used += amount
-    return [system, *recent, {"role": "user", "content": content}]
+    return [system, *recent, language, {"role": "user", "content": content}]
 
 
 class OpenAIText:
@@ -172,7 +182,24 @@ class OpenAIText:
         )
 
     def chat(self, messages):
-        return self._request(messages)
+        reply = self._request(messages)
+        # A profile and older messages may be Chinese. Do not persist a Chinese
+        # completion as a successful English reply. Permit one bounded correction,
+        # without copying the failed completion or rewriting existing history.
+        if re.search(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]", reply):
+            logger.warning(
+                "provider=openai kind=chat language_validation=failed correction_attempt=1"
+            )
+            correction = {
+                "role": "system",
+                "content": "The previous completion failed English-language validation. Reply in English only. Do not translate or imitate older Chinese replies.",
+            }
+            reply = self._request([*messages, correction])
+            if re.search(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]", reply):
+                raise ProviderError(
+                    "The model did not produce an English reply after one correction. No messages were saved. Please try again."
+                )
+        return reply
 
 
 def image_error(exc: OpenAIError) -> ProviderError:

@@ -99,7 +99,9 @@ def test_chat_refine_restore_preserves_identity_history_and_portrait(setup, char
     assert result[:2] == old_messages
     assert result[-1]["profile_version"] == 2
     assert "Distant" in text.calls[-1][1][0]["content"]
-    assert len(text.calls[-1][1]) == 4  # system + prior turn + new user
+    assert (
+        len(text.calls[-1][1]) == 5
+    )  # profile + prior turn + language rule + new user
     restored = client.post(
         base + "/restore", json={"version": 1, "expected_version": 2}
     ).json()

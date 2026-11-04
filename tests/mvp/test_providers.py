@@ -52,7 +52,7 @@ def test_bounded_context_keeps_recent_whole_turns():
     context = chat_context(Profile(name="A"), history, "last", settings)
     assert context[0]["role"] == "system" and context[-1]["content"] == "last"
     assert len(context) < len(history)
-    assert context[-2] == history[-1] and context[-3] == history[-2]
+    assert context[-3] == history[-1] and context[-4] == history[-2]
     assert sum(len(m["content"].encode()) + 16 for m in context) <= 2200 - 300 - 256
     with pytest.raises(ValueError):
         chat_context(
@@ -184,3 +184,77 @@ def test_image_api_errors_are_actionable_and_do_not_leak_secrets(
     assert "req_aabbccdd" in str(caught.value)
     assert secret not in str(caught.value) + caplog.text
     assert private_prompt not in str(caught.value) + caplog.text
+
+
+def test_english_chat_corrects_legacy_language_without_changing_history(monkeypatch):
+    from copy import deepcopy
+
+    from echoloom.providers import CHAT_LANGUAGE_RULE
+
+    profile = Profile(name="\u79e6\u5f7b", speech_style={"tone": "\u4e2d\u6587"})
+    history = [
+        {"role": "user", "content": "\u4f60\u597d"},
+        {"role": "assistant", "content": "\u4f60\u597d"},
+    ]
+    original = deepcopy(history)
+    settings = Settings(_env_file=None)
+    context = chat_context(profile, history, "How are you doing?", settings)
+    assert context[-2] == {"role": "system", "content": CHAT_LANGUAGE_RULE}
+    assert context[1:3] == original
+    calls = []
+    replies = iter(["\u8fd8\u4e0d\u9519", "Keeping a cool head. And you?"])
+
+    def request(messages):
+        calls.append(deepcopy(messages))
+        return next(replies)
+
+    monkeypatch.setattr(
+        OpenAIText, "_request", lambda self, messages: request(messages)
+    )
+    assert OpenAIText(settings).chat(context) == "Keeping a cool head. And you?"
+    assert len(calls) == 2
+    assert len(calls[1]) == len(context) + 1
+    assert calls[1][-1]["role"] == "system"
+    assert history == original
+    assert context[-1]["content"] == "How are you doing?"
+
+
+def test_english_chat_rejects_repeated_language_failure_without_unbounded_calls(
+    monkeypatch,
+):
+    from echoloom.providers import ProviderError
+
+    calls = []
+
+    def request(messages):
+        calls.append(messages)
+        return "\u4f60\u597d"
+
+    monkeypatch.setattr(
+        OpenAIText, "_request", lambda self, messages: request(messages)
+    )
+    settings = Settings(_env_file=None)
+    context = chat_context(Profile(name="A"), [], "Hello", settings)
+    with pytest.raises(ProviderError, match="No messages were saved"):
+        OpenAIText(settings).chat(context)
+    assert len(calls) == 2
+
+
+def test_english_reply_requires_no_corrective_call(monkeypatch):
+    calls = []
+
+    def request(messages):
+        calls.append(messages)
+        return "I am doing well, thank you."
+
+    monkeypatch.setattr(
+        OpenAIText, "_request", lambda self, messages: request(messages)
+    )
+    settings = Settings(_env_file=None)
+    assert (
+        OpenAIText(settings).chat(
+            chat_context(Profile(name="A"), [], "Hello", settings)
+        )
+        == "I am doing well, thank you."
+    )
+    assert len(calls) == 1
