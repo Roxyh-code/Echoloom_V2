@@ -1,37 +1,52 @@
 # EchoLoom MVP v0.1
 
-本地单用户的虚构角色工作室：自然语言创建 → 编辑 → 对话 → 逐步调整。原有 `literature/` 研究资料保持原位。需求来源：[用户提供的 PRD](prd-v0.1.md)。
+A local, single-user fictional character studio: describe → create → edit → chat → refine. The interface, system messages, and new AI-generated text use English. Existing character content and conversations remain unchanged. Original research assets remain under `literature/`.
 
-## 启动
+## Requirements
 
-需要 Python 3.12+、Node.js 20.9+（本环境验证 Python 3.12、Node 24），从仓库根目录执行：
+Python 3.12+, Node.js 20.9+, and npm. Tested in the cloud on Python 3.12 and Node 24. Provider credentials are needed for real AI operations, but not for viewing the interface.
 
-```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-dev.lock
-.venv/bin/python -m pip install --no-deps -e .
-cp .env.example .env  # 仅在 .env 不存在时执行，保留已有配置
-# 编辑 .env，配置自己的模型和 API 凭据
-.venv/bin/alembic upgrade head
-.venv/bin/uvicorn echoloom.api:app --host 127.0.0.1 --port 8000 --reload
-```
+## Windows PowerShell
 
-Windows PowerShell 对应的后端命令（`uvloop` 已在锁定依赖中排除 Windows）：
+Run these commands from the repository root:
 
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.lock
 .\.venv\Scripts\python.exe -m pip install --no-deps -e .
-# 仅在 .env 不存在时执行
+# First installation only: do not overwrite an existing .env.
 Copy-Item .env.example .env
-# 编辑 .env，配置模型和 API 凭据
+# Edit .env to configure models and API credentials.
 .\.venv\Scripts\python.exe -m alembic upgrade head
 .\.venv\Scripts\python.exe -m uvicorn echoloom.api:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Windows 启动命令尚未在 Windows 机器实测。以下前端命令适用于以上各系统。
+Keep the backend terminal open. In a second terminal, from the repository root:
 
-另一个终端：
+```powershell
+cd web
+npm.cmd ci
+npm.cmd run dev
+```
+
+Windows startup commands have not been tested on a Windows machine by the developer. The lockfile excludes `uvloop` on Windows. Using `npm.cmd` avoids PowerShell script execution policy errors.
+
+## macOS and Linux
+
+From the repository root:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.lock
+.venv/bin/python -m pip install --no-deps -e .
+# First installation only: preserve an existing .env.
+cp .env.example .env
+# Configure credentials and models in .env.
+.venv/bin/alembic upgrade head
+.venv/bin/uvicorn echoloom.api:app --host 127.0.0.1 --port 8000 --reload
+```
+
+In a second terminal:
 
 ```bash
 cd web
@@ -39,72 +54,95 @@ npm ci
 npm run dev
 ```
 
-浏览器打开 `http://127.0.0.1:3000/characters`。后端接口说明在 `http://127.0.0.1:8000/docs`。前端 `/api/*` 通过 Next.js 服务端转发到后端，浏览器不持有 API 密钥。可在启动前端前设置 `API_BASE_URL` 改变后端地址；生产构建的转发地址由**构建时**的该变量决定。
+Open `http://127.0.0.1:3000/characters` in your local browser. Backend API documentation is at `http://127.0.0.1:8000/docs`. Both processes must remain running. Production-mode local startup: `cd web && npm run build && npm start`.
 
-生产构建的本地验证：`cd web && npm run build && npm start`。这里只提供单用户原型，无登录或用户隔离；前后端均绑定回环地址。不要把它直接公开为多人服务。使用一个 Uvicorn worker；当前角色级互斥锁仅作用于同一进程。
+The frontend proxies `/api/*` to the backend; browser JavaScript never receives provider keys. Set `API_BASE_URL` before frontend startup to change the backend address. Production rewrites use the value present at **build time**.
 
-## 模型配置
+## Provider configuration
 
-服务端 `.env`：
+Server-side `.env` settings:
 
-- `LLM_PROVIDER=openai`、`LLM_API_KEY`、`LLM_MODEL`：文字模型。
-- `IMAGE_PROVIDER=openai`、`IMAGE_API_KEY`、`IMAGE_MODEL`：可选图片模型。图片密钥未填写时复用文字密钥。
-- 模型名称无硬编码默认值，请选择账号实际可用的模型。文字模型须支持 Chat Completions 的 JSON mode、`max_completion_tokens`。图片模型须同时支持 Images generation/edit、`1024x1024` 和 base64 输出（GPT image 类型接口）；返回临时 URL 的旧模型不在当前适配器支持范围。
-- 修改 `.env` 后重启后端。健康检查 `/api/health` 只报告配置是否存在、数据库是否迁移，不代表真实远端授权已通过。
+```dotenv
+LLM_PROVIDER=openai
+LLM_MODEL=<account-supported-text-model>
+LLM_API_KEY=<your-api-key>
+IMAGE_PROVIDER=openai
+IMAGE_MODEL=<account-supported-image-model>
+IMAGE_API_KEY=
+```
 
-运行环境没有配置 API 凭据时，模型操作返回清晰的 503；已有角色的读取、手动编辑、版本恢复和浏览历史仍可使用。**运行中的应用没有假 AI 模式**。不要将凭据写入 `NEXT_PUBLIC_*`、代码或测试文件；在云环境中通过安全的环境设置填写凭据，不要贴到聊天里。云端还需要允许 `api.openai.com` 的 HTTPS 出站访问。
+The text model must support Chat Completions, JSON mode, and `max_completion_tokens`. The image model must support image generation and editing, `1024x1024` output, and base64 image responses. Model IDs are configured rather than hardcoded. Check current availability and pricing before selecting a model; old model IDs may be retired. In particular, the official SDK marks `gpt-image-1` as shut down on October 23, 2026 and names `gpt-image-2.5-sunburst` and `gpt-image-2.5-flare` as replacements. Account access still needs verification.
 
-使用 OpenAI 而非 PRD 首选的 Ideogram，是为了先用同一官方 SDK 覆盖生成和原图编辑；尚未进行付费的图片质量对比。`providers.py` 的 `TextProvider` 和 `ImageProvider` 是替换边界，业务层不依赖 SDK 响应格式。
+Leave `IMAGE_API_KEY` empty to reuse `LLM_API_KEY`. Both operations incur their respective API usage charges; ChatGPT subscriptions do not include API usage. Restart the backend after editing `.env`.
 
-实现时核对了 OpenAI 官方 SDK 的 [Chat Completions](https://github.com/openai/openai-python/blob/main/src/openai/resources/chat/completions/completions.py) 和 [Images](https://github.com/openai/openai-python/blob/main/src/openai/resources/images.py) 定义。模型的账户可用性仍需真实凭据验证。
+Never commit `.env`, send credentials in chat, or put keys in `NEXT_PUBLIC_*` variables. Cloud environments need HTTPS access to `api.openai.com` and secure credential bindings. Missing credentials return a clear 503 instead of simulated AI responses. Health configuration flags indicate presence, not remote authorization. Read, manually edit, and restore existing data without provider credentials.
 
-## 已实现的流程
+OpenAI is the first image adapter because its SDK covers generation and source-image editing. Ideogram and FLUX adapters and a paid quality comparison are not implemented. Replaceable `TextProvider` and `ImageProvider` interfaces isolate business logic from SDK response formats. Official definitions checked: [Chat Completions](https://github.com/openai/openai-python/blob/main/src/openai/resources/chat/completions/completions.py), [Images](https://github.com/openai/openai-python/blob/main/src/openai/resources/images.py), and [image model IDs](https://github.com/openai/openai-python/blob/main/src/openai/types/image_model.py).
 
-- 中文响应式角色库、创建页、字段编辑器和聊天页，包含等待、失败、重试与空状态。
-- Pydantic 验证的角色数据；保留原始描述供核对，不强制虚构未知背景。生成补充内容尚未逐字段标注来源，用户应对照原始描述审阅。
-- 稳定角色 ID、SQLite 持久化、多段对话、版本绑定的消息，刷新和重启后可以继续。
-- 手动编辑无需模型调用；AI 精简字段修改先预览再确认；过期建议返回 409，防止覆盖其他页面的更新。
-- 设定恢复创建新版本，保留旧版本、聊天与头像；更改设定后，下一次聊天使用最新设定。
-- 原图生成、基于当前原图的编辑、候选预览、选用/恢复和丢弃。图片存到本地，不依赖临时远端 URL；头像与文字设定独立，不会因改图自动修改性格或外貌字段。
-- 删除角色会级联删除设定、建议、对话、图片记录和对应本地图片。
+## Updating without losing data
 
-## 数据和事务
+Keep the same local checkout, `.env`, `DATABASE_URL`, and `IMAGE_DIRECTORY`. By default, records live in `work/echoloom.db` and portraits in `work/portraits/`. These paths are ignored by Git; `git pull`, a server restart, and a browser refresh do not delete them.
 
-代码在 `src/echoloom/`，前端在 `web/`，数据库迁移在 `alembic/`。数据库默认为 `work/echoloom.db`，图片为 `work/portraits/`，均已被 Git 忽略。备份应同时包含 SQLite 数据库和图片目录；应用停止后再复制，避免遗漏 WAL 中的写入。不要只备份 `.db` 而忽略正在使用的 WAL 文件。
+Stop both application processes before updating, then run `git pull origin main`. Restart the backend and frontend using the commands above. If dependency files changed, rerun the corresponding locked installation. Run `alembic upgrade head` when a release adds migrations. The English-interface update adds no database migration and does not translate or rewrite existing character content, messages, or portraits. Legacy system revision labels are translated only when displayed.
 
-人物设定是独立 JSON 结构，版本号保存在关系表中。并发编辑带 `expected_version`；聊天与设定、头像修改使用角色级互斥锁。聊天成功后一次事务保存完整问答；失败不写入半条对话。每条发送携带客户端 UUID，响应丢失后的同编号重试会返回已保存的消息，不再调用模型。此幂等保证适用于成功落库的请求；若进程在远端生成后、落库前崩溃，重试仍可能产生第二次远端费用。
+Do not delete `work/`, recreate the project in a different directory without copying its data, or change the database URL if you want to keep existing records. Back up the database and portraits together while the application is stopped; copying only a live `.db` file may miss writes in SQLite WAL files. Test databases are temporary and separate from user data.
 
-设定/头像候选本身会持久保存；放弃设定建议不改人物，未接受的建议记录随角色删除。候选没有跨页“待办箱”；换页后可重新请求建议。丢弃头像会删除非当前且非其他版本父图的图片；作为父图的版本保持可访问。
+## Implemented behavior
 
-## 成本、上下文与限制
+- Responsive English library, creation form, structured profile editor, chat, empty states, loading indicators, and retry handling.
+- Pydantic profile validation; original descriptions remain available for review. Unknown history can stay empty. Suggestions are editable, but generated additions are not yet individually attributed to source facts.
+- Stable character IDs, SQLite persistence, multiple conversations, and profile-version metadata on messages.
+- Manual edits make no model call. AI refinement proposes only explicit leaf fields and waits for approval. Stale edits and suggestions return 409.
+- Profile restoration creates another version without deleting history or changing portraits or old messages. Future chat uses the latest profile.
+- Portrait generation, editing from the selected original image, local storage, candidate preview, selection/restoration, and discard. Editing an image does not automatically change text fields.
+- Character deletion cascades to profiles, suggestions, conversations, messages, image records, and local portrait files.
 
-配置见 `.env.example`：输入长度、输出预算、上下文预算、超时、每角色每小时图片请求数和图片体积上限。图片失败也计入预算，预算跨重启保留；图片不自动重试，避免重复付费。文字 SDK 最多重试一次，使用其退避机制。日志只记录操作类型、模型、耗时、成功状态和可用的 token 用量，不记录提示词、聊天正文或密钥。不根据不稳定的价格表伪造费用估算。
+## Data and concurrency
 
-聊天始终携带当前设定，并读取最近最多 100 条消息；按 UTF-8 字节数保守估计 token，扣除输出和结构开销，保留连续的完整近期轮次。该策略会比精确分词更早截断，尤其是中文；旧消息仍全部保存在数据库。设定本身超预算时返回 422，而不是静默丢掉设定。未来可增加提供商分词器或摘要记忆。
+Backend: `src/echoloom/`; frontend: `web/`; frozen initial database migration: `alembic/`. SQLAlchemy provides the database access layer. Confirmed profile changes create immutable revision records. Unaccepted proposals persist until character deletion, but there is no cross-page proposal inbox.
 
-图片请求使用同步 API + 前端等待状态，超时可配置；Next.js 转发等待上限为 240 秒。没有后台任务队列和跨刷新任务进度；生成期间请等待操作完成。模型本身不能保证编辑只改变指定像素，因此界面要求预览选用。没有局部蒙版编辑。
+Use a single backend worker: character-level locks serialize mutations within one process. Optimistic version checks prevent stale profile overwrites. Selecting an image does not advance the editor form's profile version. Chat saves the complete user/assistant turn in one transaction, with a client UUID for retry deduplication. If a process dies after a remote response but before commit, a retry may still incur another remote charge.
 
-## 验证
+Candidates do not replace the selected portrait until accepted. A non-current image can be discarded only if it is not the parent of another revision. Source images remain available for the revision chain.
+
+## Budgets and failure handling
+
+Settings in `.env.example` bound inputs, output/context budgets, timeouts, hourly image requests per character, and image sizes. Failed image attempts count toward the hourly budget, which survives restarts. Image requests are not automatically retried. Text SDK calls retry at most once using SDK backoff.
+
+Chat includes the current profile and reads at most 100 recent messages. A conservative UTF-8 byte estimate reserves output and framing space, retaining a contiguous suffix of whole turns; older messages stay saved. A profile too large for the budget returns 422 rather than being silently dropped.
+
+Images use synchronous requests with visible loading states. The frontend proxy timeout is 240 seconds. There is no background image queue or cross-refresh job progress. AI editing may change unintended details; preview before selecting. Region-mask editing is deferred.
+
+Logs record provider/model, operation, elapsed time, result, and available token usage, without keys or conversation/prompt content. Image failures show fixed English explanations for organization verification, moderation, quota, permissions, invalid models, and connectivity. Diagnostic metadata is allowlisted; raw provider responses are not exposed. Costs are not estimated from an unverified price table.
+
+## Tests
+
+From the repository root:
 
 ```bash
-# 仓库根目录；不调用付费 API
 .venv/bin/python -m pytest -q
+.venv/bin/ruff check src/echoloom tests/mvp alembic
+```
 
-# 前端
-cd web
+On Windows replace `.venv/bin/python` with `.\.venv\Scripts\python.exe`.
+
+From `web/`:
+
+```bash
 npm run typecheck
 npm run build
-# 首次需要浏览器；已有 /usr/bin/chromium 会自动复用
+# Reuse /usr/bin/chromium or set CHROMIUM_PATH when available.
+# Otherwise, install a test browser once:
 npx playwright install chromium
 npm run test:e2e
 ```
 
-`requirements-dev.lock` 固定本环境验证过的后端/测试依赖，`web/package-lock.json` 固定前端依赖。Playwright 以临时数据库启动**仅测试用**的模拟 AI 后端（8001）和实际 Next.js（3001），测试结束即清理；绝不复用真实用户数据库，也不产生模型费用。可通过 `CHROMIUM_PATH` 指定系统浏览器。下载浏览器若受网络策略限制，可使用已安装的 Chromium，不需要关闭 TLS 校验。
+The Python lockfile pins tested backend/development dependencies; `web/package-lock.json` pins frontend dependencies. Playwright runs the actual frontend and backend with test-only AI adapters and an ephemeral database on ports 3001/8001. It neither uses real user data nor charges AI providers. There is no mock-provider mode in the application runtime.
 
-覆盖创建与重启持久化、手动编辑、上下文裁剪、AI 修改预览/确认、过期建议冲突、设定恢复、聊天失败及并发重试去重、原图编辑、候选与版本恢复、角色归属、删除清理、图片请求预算和无凭据报错。浏览器覆盖完整旅程与响应丢失后的消息重试，包括手机宽度检查。
+Tests cover creation/restart persistence, field edits, bounded context, preview/approval, stale conflicts, profile/portrait restoration, source-image editing, request failures, retries and concurrent deduplication, image budgets, deletion/ownership, and safe error reporting. Browser tests exercise the full journey and mobile-width layout.
 
-真实模型验收仍需凭据：用一个外貌明确、三项性格特征、特定背景与语气的角色，检查生成是否保留事实、聊天是否贴合设定、性格修改后新回复是否变化、原图编辑是否保留身份。自动化测试证明应用流程与适配器调用契约，不证明外部模型质量或账户权限。
+Real provider acceptance requires credentials: verify explicit character facts, conversational consistency, changed future behavior after refinement, and image identity preservation after edits. Mock tests validate application behavior and adapter contracts, not provider output quality or account permissions.
 
-## 当前边界
+## Current limits
 
-尚未做真实付费 API 验收、Ideogram/FLUX 适配器、严格的事实保持评测、流式输出、后台图片任务、语音/视频、向量记忆、账号、公共部署。认证、授权、限流、审核与多用户隔离应在公开部署前单独实现。研究路线仍保留在原 `literature/` 和 `docs/` 中，不影响本 MVP。
+This is a local single-user prototype bound to loopback, not a public multi-user service. Authentication, authorization, moderation, rate limits, and user isolation need separate work before public deployment. Streaming replies, image background jobs, voice/video, vector memory, production deployment, and advanced evidence reconstruction are deferred. Original research remains in `literature/` and other research documentation.

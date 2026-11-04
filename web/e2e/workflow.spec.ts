@@ -7,78 +7,99 @@ test("create → edit → chat → refine → portrait edit → restore → retu
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/characters");
   await expect(
-    page.getByRole("heading", { name: "你的第一个角色，会是谁？" }),
+    page.getByRole("heading", { name: "Who will your first character be?" }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "开始创造 →" }).click();
+  await page.getByRole("link", { name: "Start creating →" }).click();
   await page
-    .getByLabel("你想遇见怎样的角色？")
+    .getByLabel("Who would you like to meet?")
     .fill(
-      "银发蓝眼的图书管理员，安静、聪明、关心朋友，住在山城，语气略带讽刺。",
+      "A silver-haired, blue-eyed librarian: reserved, intelligent and caring, living in a mountain town with a slightly sarcastic tone.",
     );
-  await page.getByRole("button", { name: "创造我的角色 →" }).click();
+  await page.getByRole("button", { name: "Create my character →" }).click();
   await expect(page).toHaveURL(/\/characters\/[\w-]+\/edit/);
   const editUrl = page.url();
-  await page.getByLabel("名字", { exact: true }).fill("薇拉");
-  await page.getByRole("button", { name: "保存修改" }).click();
-  await expect(page.getByText("✓ 已保存 · 设定 v2")).toBeVisible();
+  await page.getByLabel("Name", { exact: true }).fill("Vera");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByText("✓ Saved · Profile v2")).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel("名字", { exact: true })).toHaveValue("薇拉");
-  await page.getByRole("link", { name: "开始对话 ↗" }).click();
-  await page.getByLabel("消息", { exact: true }).fill("你在看什么？");
-  await page.getByRole("button", { name: "发送 ↑" }).click();
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Vera");
+  await page.getByRole("link", { name: "Start chat ↗" }).click();
+  await page
+    .getByLabel("Message", { exact: true })
+    .fill("What are you reading?");
+  await page.getByRole("button", { name: "Send ↑" }).click();
   await expect(
-    page.getByText("一本关于垂死恒星的书。听起来是不是很振奋？", {
-      exact: true,
-    }),
+    page.getByText(
+      "A book about dying stars. Surprisingly cheerful material, isn't it?",
+      {
+        exact: true,
+      },
+    ),
   ).toBeVisible();
   await page.reload();
-  await expect(page.getByText("你在看什么？", { exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "编辑角色 ↗" }).click();
-  await page.getByLabel("你希望怎样调整？").fill("让她更冷淡，但仍然关心朋友");
-  await page.getByRole("button", { name: "✧ 预览 AI 修改" }).click();
-  await expect(page.getByRole("heading", { name: "修改预览" })).toBeVisible();
-  await expect(page.getByText("✓ 已保存 · 设定 v2")).toBeVisible();
-  await page.getByRole("button", { name: "采用这些修改" }).click();
-  await expect(page.getByText("✓ 已保存 · 设定 v3")).toBeVisible();
-  await expect(page.getByLabel("背景故事")).toHaveValue("在山城的图书馆工作。");
-  await expect(page.getByLabel("头发", { exact: true })).toHaveValue(
-    "银色长发",
-  );
-  await page.getByRole("button", { name: "✧ 生成头像" }).click();
-  await expect(page.getByAltText("头像版本 1")).toBeVisible();
-  await page.getByRole("button", { name: "选用此版" }).click();
-  await expect(page.getByText("使用中", { exact: true })).toBeVisible();
-  await page.getByLabel("修改当前头像").fill("把头发改成蓝色");
-  await page.getByRole("button", { name: "修改头像", exact: true }).click();
-  await expect(page.getByAltText("头像版本 2")).toBeVisible();
-  await page.getByRole("button", { name: "选用此版" }).click();
   await expect(
-    page.locator(".image-version.selected").getByAltText("头像版本 2"),
+    page.getByText("What are you reading?", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Edit character ↗" }).click();
+  await page
+    .getByLabel("What would you like to change?")
+    .fill("Make her more distant, but still caring toward friends");
+  await page.getByRole("button", { name: "✧ Preview AI changes" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Change preview" }),
+  ).toBeVisible();
+  await expect(page.getByText("✓ Saved · Profile v2")).toBeVisible();
+  await page.getByRole("button", { name: "Accept changes" }).click();
+  await expect(page.getByText("✓ Saved · Profile v3")).toBeVisible();
+  await expect(page.getByLabel("Backstory")).toHaveValue(
+    "Works at a library in a mountain town.",
+  );
+  await expect(page.getByLabel("Hair", { exact: true })).toHaveValue(
+    "Long silver hair",
+  );
+  await page.getByRole("button", { name: "✧ Generate portrait" }).click();
+  await expect(page.getByAltText("Portrait version 1")).toBeVisible();
+  await page.getByRole("button", { name: "Use this version" }).click();
+  await expect(page.getByText("In use", { exact: true })).toBeVisible();
+  await page
+    .getByLabel("Edit current portrait")
+    .fill("Change the hair to blue");
+  await page
+    .getByRole("button", { name: "Edit portrait", exact: true })
+    .click();
+  await expect(page.getByAltText("Portrait version 2")).toBeVisible();
+  await page.getByRole("button", { name: "Use this version" }).click();
+  await expect(
+    page.locator(".image-version.selected").getByAltText("Portrait version 2"),
   ).toBeVisible();
   await page
     .locator(".image-version")
-    .filter({ has: page.getByAltText("头像版本 1") })
-    .getByRole("button", { name: "选用此版" })
+    .filter({ has: page.getByAltText("Portrait version 1") })
+    .getByRole("button", { name: "Use this version" })
     .click();
   await expect(
-    page.locator(".image-version.selected").getByAltText("头像版本 1"),
+    page.locator(".image-version.selected").getByAltText("Portrait version 1"),
   ).toBeVisible();
   page.once("dialog", (dialog) => dialog.accept());
   await page
     .locator(".version-list>div")
-    .filter({ hasText: "v2 · 手动编辑" })
-    .getByRole("button", { name: "恢复", exact: true })
+    .filter({ hasText: "v2 · Manual edit" })
+    .getByRole("button", { name: "Restore", exact: true })
     .click();
-  await expect(page.getByText("✓ 已保存 · 设定 v4")).toBeVisible();
-  await page.getByRole("link", { name: "开始对话 ↗" }).click();
-  await expect(page.getByText("你在看什么？", { exact: true })).toBeVisible();
-  await page.getByLabel("消息", { exact: true }).fill("接着聊吧");
-  await page.getByRole("button", { name: "发送 ↑" }).click();
+  await expect(page.getByText("✓ Saved · Profile v4")).toBeVisible();
+  await page.getByRole("link", { name: "Start chat ↗" }).click();
+  await expect(
+    page.getByText("What are you reading?", { exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Message", { exact: true }).fill("Let's keep talking");
+  await page.getByRole("button", { name: "Send ↑" }).click();
   await expect(page.locator(".message.assistant")).toHaveCount(2);
   await page.goto("/characters");
-  await expect(page.getByRole("heading", { name: "薇拉" })).toBeVisible();
-  await page.getByRole("link", { name: "继续对话" }).click();
-  await expect(page.getByText("接着聊吧", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Vera" })).toBeVisible();
+  await page.getByRole("link", { name: "Continue chat" }).click();
+  await expect(
+    page.getByText("Let's keep talking", { exact: true }),
+  ).toBeVisible();
   await page.screenshot({
     path: "test-results/chat-desktop.png",
     fullPage: true,
@@ -94,17 +115,17 @@ test("create → edit → chat → refine → portrait edit → restore → retu
     ),
   ).toBeTruthy();
   await page.goto(editUrl);
-  await expect(page.getByLabel("名字", { exact: true })).toHaveValue("薇拉");
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Vera");
   expect(errors).toEqual([]);
 });
 
 test("failed chat retry preserves one user turn", async ({ page, request }) => {
   const response = await request.post("/api/characters/generate", {
-    data: { description: "测试角色" },
+    data: { description: "Test character" },
   });
   const character = await response.json();
   await page.goto(`/characters/${character.id}/chat`);
-  await page.getByLabel("消息", { exact: true }).fill("重试测试");
+  await page.getByLabel("Message", { exact: true }).fill("Retry test");
   let intercepted = false;
   await page.route("**/api/conversations/*/messages", async (route) => {
     if (route.request().method() === "POST" && !intercepted) {
@@ -114,18 +135,18 @@ test("failed chat retry preserves one user turn", async ({ page, request }) => {
       await route.fulfill({
         status: 502,
         contentType: "application/json",
-        body: JSON.stringify({ detail: "测试网络响应丢失" }),
+        body: JSON.stringify({ detail: "Simulated lost network response" }),
       });
     } else await route.continue();
   });
-  await page.getByRole("button", { name: "发送 ↑" }).click();
+  await page.getByRole("button", { name: "Send ↑" }).click();
   await expect(page.locator(".error[role=alert]")).toContainText(
-    "测试网络响应丢失",
+    "Simulated lost network response",
   );
-  await page.getByRole("button", { name: "重试这条消息" }).click();
+  await page.getByRole("button", { name: "Retry this message" }).click();
   await expect(page.locator(".message.user")).toHaveCount(1);
   await expect(page.locator(".message.assistant")).toHaveCount(1);
-  await expect(page.getByLabel("消息", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel("Message", { exact: true })).toHaveValue("");
 });
 
 test("portrait selection cannot bypass a stale profile conflict", async ({
@@ -133,27 +154,29 @@ test("portrait selection cannot bypass a stale profile conflict", async ({
   request,
 }) => {
   const created = await request.post("/api/characters/generate", {
-    data: { description: "版本冲突测试角色" },
+    data: { description: "Profile conflict test character" },
   });
   const character = await created.json();
   const base = `/api/characters/${character.id}`;
   await request.post(`${base}/images/generate`, { data: {} });
   await page.goto(`/characters/${character.id}/edit`);
-  await page.getByLabel("名字", { exact: true }).fill("此页未保存的名字");
+  await page
+    .getByLabel("Name", { exact: true })
+    .fill("Unsaved name in this page");
   const otherPage = await request.patch(base, {
     data: {
-      profile: { ...character.profile, name: "其他页面保存的名字" },
+      profile: { ...character.profile, name: "Name saved in another page" },
       expected_version: 1,
     },
   });
   expect(otherPage.ok()).toBeTruthy();
-  await page.getByRole("button", { name: "选用此版" }).click();
-  await expect(page.getByText("使用中", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "保存修改" }).click();
+  await page.getByRole("button", { name: "Use this version" }).click();
+  await expect(page.getByText("In use", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.locator(".error[role=alert]")).toContainText(
-    "角色已在其他页面更新",
+    "The character was updated in another page",
   );
   const saved = await (await request.get(base)).json();
-  expect(saved.profile.name).toBe("其他页面保存的名字");
+  expect(saved.profile.name).toBe("Name saved in another page");
   expect(saved.current_image_id).not.toBeNull();
 });

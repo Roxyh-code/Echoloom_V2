@@ -21,14 +21,16 @@ class FakeText:
     def generate(self, description):
         self.calls.append(("generate", description))
         if self.fail:
-            raise ProviderError("测试中的提供商故障")
+            raise ProviderError("Simulated provider failure")
         return Profile(
-            name="伊芙琳",
-            short_description="喜欢天文学的图书管理员",
-            appearance={"hair": "银色长发", "eyes": "蓝色"},
-            personality={"core_traits": ["聪明", "安静", "关心朋友"]},
-            backstory="在山城的图书馆工作。",
-            speech_style={"tone": "冷静，略带讽刺"},
+            name="Evelyn",
+            short_description="A librarian who loves astronomy",
+            appearance={"hair": "Long silver hair", "eyes": "Blue"},
+            personality={
+                "core_traits": ["Intelligent", "Reserved", "Caring toward friends"]
+            },
+            backstory="Works at a library in a mountain town.",
+            speech_style={"tone": "Calm and slightly sarcastic"},
         )
 
     def refine(self, profile, instruction):
@@ -37,17 +39,17 @@ class FakeText:
             changes=[
                 {
                     "path": "personality.core_traits",
-                    "value": ["聪明", "冷淡", "关心朋友"],
+                    "value": ["Intelligent", "Distant", "Caring toward friends"],
                 }
             ],
-            explanation="仅调整核心性格，保留其他设定。",
+            explanation="Adjust only the core traits and preserve all other details.",
         )
 
     def chat(self, messages):
         self.calls.append(("chat", messages))
         if self.fail:
-            raise ProviderError("测试中的提供商故障")
-        return "一本关于垂死恒星的书。听起来是不是很振奋？"
+            raise ProviderError("Simulated provider failure")
+        return "A book about dying stars. Surprisingly cheerful material, isn't it?"
 
 
 class FakeImages:
@@ -58,7 +60,7 @@ class FakeImages:
     def render(self, prompt, source=None):
         self.sources.append(source)
         if self.fail:
-            raise ProviderError("测试中的图片故障")
+            raise ProviderError("Simulated image failure")
         stream = BytesIO()
         Image.new("RGB", (32, 32), "navy" if source else "lavender").save(stream, "PNG")
         return stream.getvalue()
@@ -85,7 +87,9 @@ def character(setup):
     client = setup[0]
     response = client.post(
         "/api/characters/generate",
-        json={"description": "银发蓝眼，安静聪明的图书管理员。"},
+        json={
+            "description": "A quiet, intelligent librarian with silver hair and blue eyes."
+        },
     )
     assert response.status_code == 201, response.text
     return response.json()

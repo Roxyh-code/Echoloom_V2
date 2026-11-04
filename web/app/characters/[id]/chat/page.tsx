@@ -122,7 +122,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
   if (loading)
     return (
       <main className="container" role="status">
-        正在找回上次的对话…
+        Loading your conversation…
       </main>
     );
   if (!character)
@@ -132,7 +132,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
           {error}
         </p>
         <button className="button" onClick={() => location.reload()}>
-          重新加载
+          Reload
         </button>
       </main>
     );
@@ -140,10 +140,10 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
     <main className="chat-container">
       <div className="chat-top">
         <Link className="back-link" href="/characters">
-          ← 我的角色
+          ← My Characters
         </Link>
         <Link className="button" href={`${base}/edit`}>
-          编辑角色 ↗
+          Edit character ↗
         </Link>
       </div>
       <section className="chat-shell">
@@ -159,11 +159,11 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
               ))}
           </div>
           <p className="muted small">
-            当前设定 v{character.profile_version}
+            Current profile v{character.profile_version}
             <br />
-            这是虚构 AI 角色。对话保存在本机。
+            This is a fictional AI character. Conversations are saved locally.
           </p>
-          <label htmlFor="conversation">对话记录</label>
+          <label htmlFor="conversation">Conversation history</label>
           <select
             id="conversation"
             disabled={busy}
@@ -172,8 +172,8 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
           >
             {conversations.map((c, i) => (
               <option key={c.id} value={c.id}>
-                对话 {i + 1} ·{" "}
-                {new Date(c.created_at).toLocaleDateString("zh-CN")}
+                Conversation {i + 1} ·{" "}
+                {new Date(c.created_at).toLocaleDateString("en-US")}
               </option>
             ))}
           </select>
@@ -182,33 +182,33 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
             disabled={busy}
             onClick={newConversation}
           >
-            ＋ 开始新对话
+            ＋ New conversation
           </button>
         </aside>
         <div className="chat-main">
           <div className="chat-title">
-            <span className="presence" />与 {character.profile.name} 的对话{" "}
-            <small>AI CHARACTER</small>
+            <span className="presence" />
+            Chat with {character.profile.name} <small>AI CHARACTER</small>
           </div>
           <div className="messages" aria-live="polite">
             {messages.length === 0 && (
               <div className="chat-empty">
                 <span>✧</span>
-                <h2>故事，从一句「你好」开始。</h2>
-                <p>问问 TA 今天在想什么，或者介绍一下自己。</p>
+                <h2>Every story starts with hello.</h2>
+                <p>Ask what is on their mind, or introduce yourself.</p>
               </div>
             )}
             {messages.map((m) => (
               <div key={m.id} className={`message ${m.role}`}>
                 <small>
-                  {m.role === "user" ? "你" : character.profile.name}
+                  {m.role === "user" ? "You" : character.profile.name}
                 </small>
                 <p>{m.content}</p>
               </div>
             ))}
             {busy && (
               <div className="thinking" role="status">
-                正在等待回应…
+                Waiting for a reply…
               </div>
             )}
             <div ref={bottom} />
@@ -218,7 +218,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
               {error}
               {retry && (
                 <button disabled={busy} onClick={() => send(retry)}>
-                  重试这条消息
+                  Retry this message
                 </button>
               )}
             </div>
@@ -231,13 +231,13 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
             }}
           >
             <label className="sr-only" htmlFor="message">
-              消息
+              Message
             </label>
             <textarea
               id="message"
               rows={2}
               maxLength={4000}
-              placeholder={`对 ${character.profile.name} 说点什么…`}
+              placeholder={`Say something to ${character.profile.name}…`}
               value={input}
               disabled={busy || !!retry}
               onChange={(e) => setInput(e.target.value)}
@@ -256,12 +256,12 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
               className="button primary"
               disabled={busy || !input.trim() || !!retry}
             >
-              发送 ↑
+              Send ↑
             </button>
           </form>
           {retry && (
             <div className="retry-note">
-              <span>未发送成功：{retry.content.slice(0, 80)}</span>
+              <span>Not sent: {retry.content.slice(0, 80)}</span>
               <button
                 className="text-button"
                 disabled={busy}
@@ -270,12 +270,12 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
                   setError("");
                 }}
               >
-                取消重试，重新编辑
+                Cancel retry and edit
               </button>
             </div>
           )}
           <p className="chat-disclaimer">
-            AI 可能生成不准确的内容。Enter 发送 · Shift + Enter 换行
+            AI can make mistakes. Enter to send · Shift + Enter for a new line
           </p>
         </div>
       </section>

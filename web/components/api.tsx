@@ -72,8 +72,8 @@ export async function api<T>(
       typeof detail === "string"
         ? detail
         : Array.isArray(detail)
-          ? "输入格式不正确，请检查字段内容和长度。"
-          : "服务暂时不可用，请确认后端已启动后重试。",
+          ? "Invalid input. Check field values and length limits."
+          : "The service is unavailable. Check that the backend is running, then retry.",
     );
   }
   return response.status === 204 ? (undefined as T) : response.json();
@@ -94,7 +94,7 @@ export function Avatar({
   return (
     <div className={`avatar ${large ? "large" : ""}`}>
       {url ? (
-        <img src={url} alt={`${character.profile.name} 的头像`} />
+        <img src={url} alt={`Portrait of ${character.profile.name}`} />
       ) : (
         <span>{character.profile.name.slice(0, 1)}</span>
       )}

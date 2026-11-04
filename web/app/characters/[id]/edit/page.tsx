@@ -13,44 +13,44 @@ import {
 
 const sections = [
   {
-    title: "基本信息",
-    subtitle: "故事从这里开始",
+    title: "Basic Information",
+    subtitle: "Every story starts somewhere",
     fields: [
-      ["name", "名字"],
-      ["short_description", "一句话介绍"],
-      ["backstory", "背景故事"],
+      ["name", "Name"],
+      ["short_description", "Short description"],
+      ["backstory", "Backstory"],
     ],
   },
   {
-    title: "外貌",
-    subtitle: "想象 TA 的样子",
+    title: "Appearance",
+    subtitle: "Picture your character",
     fields: [
-      ["appearance.age_description", "年龄描述"],
-      ["appearance.hair", "头发"],
-      ["appearance.eyes", "眼睛"],
-      ["appearance.clothing", "服饰"],
-      ["appearance.other_details", "其他特征"],
+      ["appearance.age_description", "Age description"],
+      ["appearance.hair", "Hair"],
+      ["appearance.eyes", "Eyes"],
+      ["appearance.clothing", "Clothing"],
+      ["appearance.other_details", "Other details"],
     ],
   },
   {
-    title: "性格",
-    subtitle: "让角色有自己的内在世界",
+    title: "Personality",
+    subtitle: "Give your character an inner world",
     fields: [
-      ["personality.core_traits", "核心特质"],
-      ["personality.values", "价值观"],
-      ["personality.motivations", "动机"],
-      ["personality.behavioral_patterns", "行为习惯"],
+      ["personality.core_traits", "Core traits"],
+      ["personality.values", "Values"],
+      ["personality.motivations", "Motivations"],
+      ["personality.behavioral_patterns", "Behavioral patterns"],
     ],
   },
   {
-    title: "说话与相处",
-    subtitle: "属于 TA 的表达方式",
+    title: "Speech and Interaction",
+    subtitle: "A voice of their own",
     fields: [
-      ["speech_style.tone", "语气"],
-      ["speech_style.vocabulary", "用词风格"],
-      ["speech_style.speaking_habits", "常用表达"],
-      ["interaction_preferences.conversation_style", "对话方式"],
-      ["interaction_preferences.relationship_context", "与你的关系"],
+      ["speech_style.tone", "Tone"],
+      ["speech_style.vocabulary", "Vocabulary"],
+      ["speech_style.speaking_habits", "Speaking habits"],
+      ["interaction_preferences.conversation_style", "Conversation style"],
+      ["interaction_preferences.relationship_context", "Relationship context"],
     ],
   },
 ];
@@ -67,8 +67,8 @@ function valueAt(profile: Profile, path: string): string | string[] {
 }
 function display(value: string | string[]) {
   return Array.isArray(value)
-    ? value.join("、") || "（空）"
-    : value || "（空）";
+    ? value.join(", ") || "(empty)"
+    : value || "(empty)";
 }
 
 export default function Editor({
@@ -158,11 +158,11 @@ export default function Editor({
           <div className="error" role="alert">
             {error}
             <button onClick={() => load().catch((e) => setError(e.message))}>
-              重试
+              Retry
             </button>
           </div>
         ) : (
-          <p role="status">正在打开角色工作室…</p>
+          <p role="status">Opening the character studio…</p>
         )}
       </main>
     );
@@ -172,34 +172,41 @@ export default function Editor({
         className="back-link"
         href="/characters"
         onClick={(e) => {
-          if (dirty && !confirm("还有未保存的修改，确定离开？"))
+          if (dirty && !confirm("You have unsaved changes. Leave this page?"))
             e.preventDefault();
         }}
       >
-        ← 我的角色
+        ← My Characters
       </Link>
       <section className="page-intro compact">
         <div>
           <p className="eyebrow">CHARACTER STUDIO</p>
-          <h1>塑造 {character.profile.name}</h1>
-          <p className="muted">每一个细节，都让 TA 更接近你的想象。</p>
+          <h1>Shape {character.profile.name}</h1>
+          <p className="muted">
+            Every detail brings them closer to your imagination.
+          </p>
         </div>
         <Link
           className="button"
           href={`${base}/chat`}
           onClick={(e) => {
-            if (dirty && !confirm("修改尚未保存。使用已保存的设定开始对话？"))
+            if (
+              dirty &&
+              !confirm(
+                "Your changes are not saved. Start chatting with the saved profile?",
+              )
+            )
               e.preventDefault();
           }}
         >
-          开始对话 ↗
+          Start chat ↗
         </Link>
       </section>
       <div className="status-bar" aria-live="polite">
         <span className={dirty ? "unsaved" : "saved"}>
           {dirty
-            ? "● 有未保存的修改"
-            : `✓ 已保存 · 设定 v${character.profile_version}`}
+            ? "● Unsaved changes"
+            : `✓ Saved · Profile v${character.profile_version}`}
         </span>
         {notice && <span>{notice}</span>}
         {busy && <span role="status">{busy}…</span>}
@@ -214,8 +221,10 @@ export default function Editor({
           <section className="panel portrait-panel">
             <Avatar character={character} large />
             <h2>{character.profile.name}</h2>
-            <p className="muted">头像是可选的，先开始对话也很好。</p>
-            <label htmlFor="visual-style">画面风格</label>
+            <p className="muted">
+              Portraits are optional. You can start chatting right away.
+            </p>
+            <label htmlFor="visual-style">Visual style</label>
             <select
               id="visual-style"
               value={profile.visual_style}
@@ -223,10 +232,10 @@ export default function Editor({
               onChange={(e) => setField("visual_style", e.target.value)}
             >
               {[
-                ["Anime", "动漫"],
-                ["Cartoon", "卡通"],
-                ["Semi-realistic", "半写实"],
-                ["Realistic", "写实"],
+                ["Anime", "Anime"],
+                ["Cartoon", "Cartoon"],
+                ["Semi-realistic", "Semi-realistic"],
+                ["Realistic", "Realistic"],
               ].map(([v, l]) => (
                 <option key={v} value={v}>
                   {l}
@@ -237,25 +246,28 @@ export default function Editor({
               className="button full"
               disabled={!!busy || !!dirty}
               onClick={() =>
-                action("正在生成头像，请稍候", async () => {
+                action("Generating a portrait, please wait", async () => {
                   await api(`${base}/images/generate`, {
                     expected_image_id: character.current_image_id,
                   });
                   setImages(await api(`${base}/images`));
-                  setNotice("新头像已生成，请在下方预览并选用。");
+                  setNotice(
+                    "Your portrait is ready. Preview it below and choose whether to use it.",
+                  );
                 })
               }
             >
-              ✧ 生成头像
+              ✧ Generate portrait
             </button>
             {dirty && (
               <small className="muted">
-                请先保存设定，再生成头像或让 AI 修改。
+                Save your profile before generating a portrait or requesting AI
+                refinement.
               </small>
             )}
             {character.current_image_id && (
               <>
-                <label htmlFor="image-edit">修改当前头像</label>
+                <label htmlFor="image-edit">Edit current portrait</label>
                 <textarea
                   id="image-edit"
                   rows={3}
@@ -263,53 +275,61 @@ export default function Editor({
                   value={imageInstruction}
                   disabled={!!busy}
                   onChange={(e) => setImageInstruction(e.target.value)}
-                  placeholder="例如：头发改成深蓝色，保留其他细节"
+                  placeholder="For example: Make the hair dark blue and keep everything else the same"
                 />
                 <small className="muted">
-                  AI 编辑可能改变其他细节。原图会保留，请预览后选用。
+                  AI edits may change other details. The original is kept;
+                  preview the result before selecting it.
                 </small>
                 <button
                   className="button full"
                   disabled={!!busy || !imageInstruction.trim() || !!dirty}
                   onClick={() =>
-                    action("正在修改头像，请稍候", async () => {
+                    action("Editing your portrait, please wait", async () => {
                       await api(`${base}/images/edit`, {
                         instruction: imageInstruction,
                         expected_image_id: character.current_image_id,
                       });
                       setImages(await api(`${base}/images`));
-                      setNotice("修改完成，请对比并选用新版本。");
+                      setNotice(
+                        "Your edit is ready. Compare the versions and select your favorite.",
+                      );
                     })
                   }
                 >
-                  修改头像
+                  Edit portrait
                 </button>
               </>
             )}
           </section>
           {images.length > 0 && (
             <section className="panel">
-              <h3>头像版本</h3>
-              <p className="muted small">选用只改变头像，不会改动人物设定。</p>
+              <h3>Portrait version</h3>
+              <p className="muted small">
+                Selecting a portrait does not change the character profile.
+              </p>
               <div className="image-history">
                 {images.map((image) => (
                   <div
                     key={image.id}
                     className={`image-version ${image.id === character.current_image_id ? "selected" : ""}`}
                   >
-                    <img src={image.url} alt={`头像版本 ${image.version}`} />
+                    <img
+                      src={image.url}
+                      alt={`Portrait version ${image.version}`}
+                    />
                     <small>
                       v{image.version}
-                      {image.parent_image_id ? " · 编辑" : " · 生成"}
+                      {image.parent_image_id ? " · Edit" : " · Generated"}
                     </small>
                     {image.id === character.current_image_id ? (
-                      <span className="saved">使用中</span>
+                      <span className="saved">In use</span>
                     ) : (
                       <>
                         <button
                           disabled={!!busy}
                           onClick={() =>
-                            action("正在选用头像", async () => {
+                            action("Selecting portrait", async () => {
                               const c = await api<Character>(
                                 `${base}/images/${image.id}/select`,
                                 {},
@@ -324,17 +344,17 @@ export default function Editor({
                                     }
                                   : c,
                               );
-                              setNotice("头像已保存。");
+                              setNotice("Portrait saved.");
                             })
                           }
                         >
-                          选用此版
+                          Use this version
                         </button>
                         <button
                           className="text-button danger"
                           disabled={!!busy}
                           onClick={() =>
-                            action("正在移除图片", async () => {
+                            action("Removing image", async () => {
                               await api(
                                 `${base}/images/${image.id}`,
                                 undefined,
@@ -344,7 +364,7 @@ export default function Editor({
                             })
                           }
                         >
-                          丢弃
+                          Discard
                         </button>
                       </>
                     )}
@@ -354,13 +374,13 @@ export default function Editor({
             </section>
           )}
           <section className="panel">
-            <h3>最初的灵感</h3>
+            <h3>Original inspiration</h3>
             <p className="original-description">
               {character.original_description}
             </p>
             <p className="muted small">
-              请对照原始要求检查 AI
-              建议。未指定的内容可能是创作补充，所有字段均可修改。
+              Compare AI suggestions with your original request. Unspecified
+              details may be creative additions, and every field is editable.
             </p>
           </section>
         </aside>
@@ -368,7 +388,7 @@ export default function Editor({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              void action("正在保存设定", async () => {
+              void action("Saving profile", async () => {
                 const c = await api<Character>(
                   base,
                   { profile, expected_version: character.profile_version },
@@ -376,7 +396,9 @@ export default function Editor({
                 );
                 update(c);
                 setVersions(await api(`${base}/versions`));
-                setNotice("修改已保存，后续对话会使用新的设定。");
+                setNotice(
+                  "Changes saved. Future replies will use the updated profile.",
+                );
               });
             }}
           >
@@ -405,7 +427,10 @@ export default function Editor({
                       >
                         {label}
                         {list && (
-                          <span className="field-hint"> · 每行一项</span>
+                          <span className="field-hint">
+                            {" "}
+                            · One item per line
+                          </span>
                         )}
                         {multiline ? (
                           <textarea
@@ -440,24 +465,25 @@ export default function Editor({
             <div className="save-strip">
               <p>
                 {dirty
-                  ? "保存后，新设定会用于之后的对话。"
-                  : "设定与对话分别保存，你可以随时回来。"}
+                  ? "Saved changes apply to future conversations."
+                  : "Your profile and conversations are saved independently. Come back anytime."}
               </p>
               <button
                 className="button primary"
                 disabled={!!busy || !dirty || !profile.name.trim()}
               >
-                保存修改
+                Save changes
               </button>
             </div>
           </form>
           <section className="panel refine-panel">
             <p className="eyebrow">SHAPE, DON’T RESTART</p>
-            <h2>用一句话，调整 TA。</h2>
+            <h2>Refine them in a few words.</h2>
             <p className="muted">
-              我们会先展示修改建议，由你决定是否采用。对话和头像会保留。
+              Review the proposed changes before accepting them. Your
+              conversations and portrait are preserved.
             </p>
-            <label htmlFor="refinement">你希望怎样调整？</label>
+            <label htmlFor="refinement">What would you like to change?</label>
             <textarea
               id="refinement"
               rows={3}
@@ -468,13 +494,13 @@ export default function Editor({
                 setInstruction(e.target.value);
                 setProposal(null);
               }}
-              placeholder="让她更冷淡一点，但对信任的人仍然温柔。"
+              placeholder="Make her more distant, but still gentle toward people she trusts."
             />
             <button
               className="button"
               disabled={!!busy || !instruction.trim() || !!dirty}
               onClick={() =>
-                action("正在构思修改建议", async () => {
+                action("Preparing suggested changes", async () => {
                   setProposal(
                     await api(`${base}/refine`, {
                       instruction,
@@ -484,11 +510,11 @@ export default function Editor({
                 })
               }
             >
-              ✧ 预览 AI 修改
+              ✧ Preview AI changes
             </button>
             {proposal && (
               <div className="proposal">
-                <h3>修改预览</h3>
+                <h3>Change preview</h3>
                 <p>{proposal.explanation}</p>
                 {proposal.changes.map((change) => (
                   <div className="diff" key={change.path}>
@@ -505,7 +531,7 @@ export default function Editor({
                     className="button primary"
                     disabled={!!busy}
                     onClick={() =>
-                      action("正在应用修改", async () => {
+                      action("Applying changes", async () => {
                         update(
                           await api(`${base}/refine/confirm`, {
                             proposal_id: proposal.proposal_id,
@@ -513,26 +539,30 @@ export default function Editor({
                         );
                         setVersions(await api(`${base}/versions`));
                         setInstruction("");
-                        setNotice("已采用建议，角色身份和对话保持连续。");
+                        setNotice(
+                          "Changes accepted. Your character identity and conversations are preserved.",
+                        );
                       })
                     }
                   >
-                    采用这些修改
+                    Accept changes
                   </button>
                   <button
                     className="button"
                     disabled={!!busy}
                     onClick={() => setProposal(null)}
                   >
-                    放弃建议
+                    Discard suggestion
                   </button>
                 </div>
               </div>
             )}
           </section>
           <section className="panel">
-            <h2>设定版本</h2>
-            <p className="muted">恢复会另存为新版本，保留全部历史。</p>
+            <h2>Profile versions</h2>
+            <p className="muted">
+              Restoring creates a new version and preserves your history.
+            </p>
             <div className="version-list">
               {versions.map((v) => (
                 <div key={v.version}>
@@ -541,11 +571,11 @@ export default function Editor({
                       v{v.version} · {v.change_summary}
                     </strong>
                     <small className="muted">
-                      {new Date(v.created_at).toLocaleString("zh-CN")}
+                      {new Date(v.created_at).toLocaleString("en-US")}
                     </small>
                   </div>
                   {v.version === character.profile_version ? (
-                    <span className="saved">当前版本</span>
+                    <span className="saved">Current version</span>
                   ) : (
                     <button
                       className="button"
@@ -553,10 +583,10 @@ export default function Editor({
                       onClick={() => {
                         if (
                           confirm(
-                            `将设定恢复到 v${v.version}？对话和头像保持不变。`,
+                            `Restore profile v${v.version}? Conversations and portraits will stay unchanged.`,
                           )
                         )
-                          void action("正在恢复设定", async () => {
+                          void action("Restoring profile", async () => {
                             update(
                               await api(`${base}/restore`, {
                                 version: v.version,
@@ -564,11 +594,11 @@ export default function Editor({
                               }),
                             );
                             setVersions(await api(`${base}/versions`));
-                            setNotice("设定已恢复。");
+                            setNotice("Profile restored.");
                           });
                       }}
                     >
-                      恢复
+                      Restore
                     </button>
                   )}
                 </div>

@@ -55,7 +55,9 @@ def test_bounded_context_keeps_recent_whole_turns():
     assert context[-2] == history[-1] and context[-3] == history[-2]
     assert sum(len(m["content"].encode()) + 16 for m in context) <= 2200 - 300 - 256
     with pytest.raises(ValueError):
-        chat_context(Profile(name="A", backstory="汉" * 2000), [], "hello", settings)
+        chat_context(
+            Profile(name="A", backstory="\u6c49" * 2000), [], "hello", settings
+        )
 
 
 def test_missing_credentials_are_explicit_no_fallback():
@@ -123,16 +125,16 @@ def test_adapter_calls_official_sdk_and_uses_source_for_edit(monkeypatch):
 @pytest.mark.parametrize(
     ("code", "param", "message", "expected"),
     [
-        ("moderation_blocked", None, "blocked by safety system", "内容审核"),
+        ("moderation_blocked", None, "blocked by safety system", "content moderation"),
         (
             None,
             None,
             "Your organization must be verified to use this model",
-            "组织验证",
+            "organization verification",
         ),
-        ("billing_hard_limit_reached", None, "billing limit", "消费上限"),
+        ("billing_hard_limit_reached", None, "billing limit", "spending limit"),
         ("unsupported_parameter", "size", "Unsupported size", "param=size"),
-        (None, "model", "unsupported model", "图片模型"),
+        (None, "model", "unsupported model", "image model"),
     ],
 )
 def test_image_api_errors_are_actionable_and_do_not_leak_secrets(

@@ -1,7 +1,7 @@
-# 验证与回归
+# Validation and regression tests
 
-MVP 的数据、接口、提供商契约测试位于 `tests/mvp/`：仓库根目录执行 `.venv/bin/python -m pytest -q`。浏览器旅程测试位于 `web/e2e/`，使用临时数据库和模拟付费服务，执行 `cd web && npm run test:e2e`。详细要求与运行条件见 [MVP 开发说明](../docs/mvp/README.md)。
+MVP API, data, and provider tests live in `tests/mvp/`. From the repository root, run `.venv/bin/python -m pytest -q`. Browser tests live in `web/e2e/`: run `cd web && npm run test:e2e`. They use a temporary database and mocked paid providers. See the [MVP guide](../docs/mvp/README.md) for prerequisites.
 
-实现后优先检查真正会破坏结果的行为：来源范围错误、悬空证据 ID、跨人物归属、冲突静默覆盖、版本串用、未知被填成事实。用小型原创夹具验证，不为每个函数机械复制实现逻辑。
+Prioritize failures that damage results: incorrect source scope, dangling evidence IDs, cross-character ownership, silently overwritten conflicts, mixed versions, and unknown information presented as fact. Use small original fixtures rather than duplicating every implementation detail.
 
-确定性数据约束测试与依赖付费模型的研究评估分开；后者记录在 `experiments/`，不默认在每次测试时调用 API。
+Keep deterministic constraints separate from paid-model research evaluations. Record the latter in `experiments/`; normal tests should not call paid APIs.

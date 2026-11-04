@@ -24,7 +24,7 @@ export default function Library() {
   async function remove(c: Character) {
     if (
       !confirm(
-        `删除「${c.profile.name}」及全部对话、设定与图片？此操作无法撤销。`,
+        `Delete ${c.profile.name} and all conversations, profiles and images? This cannot be undone.`,
       )
     )
       return;
@@ -43,32 +43,36 @@ export default function Library() {
       <section className="page-intro">
         <div>
           <p className="eyebrow">YOUR LITTLE UNIVERSE</p>
-          <h1>每个角色，都有故事。</h1>
-          <p className="muted">创造一个新朋友，或继续上一次未完的对话。</p>
+          <h1>Every character has a story.</h1>
+          <p className="muted">
+            Create someone new, or pick up where your last conversation left
+            off.
+          </p>
         </div>
         <Link className="button primary" href="/characters/new">
-          ＋ 创造角色
+          ＋ Create Character
         </Link>
       </section>
       {error && (
         <div role="alert" className="error">
-          {error} <button onClick={load}>重试</button>
+          {error} <button onClick={load}>Retry</button>
         </div>
       )}
       {loading ? (
-        <p role="status">正在打开你的角色库…</p>
+        <p role="status">Opening your character library…</p>
       ) : !characters.length && !error ? (
         <section className="empty-state">
           <div className="empty-art">✧</div>
           <p className="eyebrow">A STORY STARTS WITH A SPARK</p>
-          <h2>你的第一个角色，会是谁？</h2>
+          <h2>Who will your first character be?</h2>
           <p>
-            一位仰望星空的图书管理员，一位嘴硬心软的旅人。
+            A stargazing librarian. A sharp-tongued traveler with a gentle
+            heart.
             <br />
-            用几句话，让想象中的 TA 来到这里。
+            Bring someone from your imagination to life in a few words.
           </p>
           <Link className="button primary" href="/characters/new">
-            开始创造 →
+            Start creating →
           </Link>
         </section>
       ) : (
@@ -79,31 +83,34 @@ export default function Library() {
                 <Avatar character={c} large />
                 <h2>{c.profile.name}</h2>
               </Link>
-              <p>{c.profile.short_description || "故事，等你一起书写。"}</p>
+              <p>
+                {c.profile.short_description ||
+                  "A story waiting to be written together."}
+              </p>
               <div className="tags">
                 {c.profile.personality.core_traits.slice(0, 3).map((t, i) => (
                   <span key={i}>{t}</span>
                 ))}
               </div>
               <small className="muted">
-                更新于 {new Date(c.updated_at).toLocaleDateString("zh-CN")}
+                Updated {new Date(c.updated_at).toLocaleDateString("en-US")}
               </small>
               <div className="card-actions">
                 <Link
                   href={`/characters/${c.id}/chat`}
                   className="button primary"
                 >
-                  继续对话
+                  Continue chat
                 </Link>
                 <Link href={`/characters/${c.id}/edit`} className="button">
-                  编辑
+                  Edit
                 </Link>
                 <button
                   className="text-button danger"
                   disabled={busy}
                   onClick={() => remove(c)}
                 >
-                  删除
+                  Delete
                 </button>
               </div>
             </article>

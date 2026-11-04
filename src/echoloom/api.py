@@ -106,7 +106,7 @@ def create_app(
     def character(db, cid):
         value = db.get(Character, str(cid))
         if not value:
-            raise HTTPException(404, "角色不存在。")
+            raise HTTPException(404, "Character not found.")
         return value
 
     def revision(db, c, version=None):
@@ -117,7 +117,7 @@ def create_app(
             )
         )
         if not value:
-            raise HTTPException(404, "角色版本不存在。")
+            raise HTTPException(404, "Profile version not found.")
         return value
 
     def serialize(db, c):
@@ -139,7 +139,9 @@ def create_app(
 
     def check_version(c, expected):
         if c.current_profile_version != expected:
-            raise HTTPException(409, "角色已在其他页面更新，请重新加载后再修改。")
+            raise HTTPException(
+                409, "The character was updated in another page. Reload before editing."
+            )
 
     def save_profile(db, c, profile, expected, summary):
         check_version(c, expected)
@@ -149,7 +151,7 @@ def create_app(
             .values(current_profile_version=expected + 1, updated_at=now())
         )
         if changed.rowcount != 1:
-            raise HTTPException(409, "版本冲突，请重新加载。")
+            raise HTTPException(409, "Version conflict. Please reload.")
         db.add(
             ProfileRevision(
                 character_id=c.id,
@@ -197,7 +199,8 @@ def create_app(
     def generate(body: GenerateInput, db: DbSession):
         if len(body.description) > settings.max_profile_input_chars:
             raise HTTPException(
-                422, f"描述不能超过 {settings.max_profile_input_chars} 字。"
+                422,
+                f"The description must not exceed {settings.max_profile_input_chars} characters.",
             )
         profile = Profile.model_validate(app.state.text.generate(body.description))
         c = Character(original_description=body.description)
@@ -208,7 +211,7 @@ def create_app(
                 character_id=c.id,
                 version=1,
                 profile_json=profile.model_dump(),
-                change_summary="创建角色",
+                change_summary="Create Character",
             )
         )
         db.add(Conversation(character_id=c.id))
@@ -225,7 +228,7 @@ def create_app(
             c = character(db, cid)
             check_version(c, body.expected_version)
             if body.profile.model_dump() != revision(db, c).profile_json:
-                save_profile(db, c, body.profile, body.expected_version, "手动编辑")
+                save_profile(db, c, body.profile, body.expected_version, "Manual edit")
                 db.commit()
             return serialize(db, c)
 
@@ -253,9 +256,14 @@ def create_app(
             try:
                 proposed, diff = apply_changes(profile, proposal)
             except ValueError:
-                raise ProviderError("模型提出了无效的字段修改，请重试。") from None
+                raise ProviderError(
+                    "The model proposed invalid field changes. Please retry."
+                ) from None
             if not diff:
-                raise HTTPException(422, "模型没有提出实际修改，请换一种描述。")
+                raise HTTPException(
+                    422,
+                    "The model did not propose any changes. Try a different instruction.",
+                )
             item = Proposal(
                 character_id=c.id,
                 base_version=c.current_profile_version,
@@ -278,7 +286,7 @@ def create_app(
             c = character(db, cid)
             item = db.get(Proposal, str(body.proposal_id))
             if not item or item.character_id != c.id:
-                raise HTTPException(404, "修改建议不存在。")
+                raise HTTPException(404, "Refinement proposal not found.")
             if item.accepted_version is not None:
                 return serialize(db, c)
             save_profile(
@@ -292,6 +300,17 @@ def create_app(
             db.commit()
             return serialize(db, c)
 
+    def display_summary(summary):
+        # Translate legacy system labels for display without modifying stored revisions.
+        if summary == "\u521b\u5efa\u89d2\u8272":
+            return "Create Character"
+        if summary == "\u624b\u52a8\u7f16\u8f91":
+            return "Manual edit"
+        prefix = "\u6062\u590d\u81ea\u7248\u672c "
+        if summary.startswith(prefix) and summary[len(prefix) :].isdigit():
+            return "Restored from version " + summary[len(prefix) :]
+        return summary
+
     @app.get("/api/characters/{cid}/versions")
     def versions(cid: UUID, db: DbSession):
         c = character(db, cid)
@@ -299,7 +318,7 @@ def create_app(
             {
                 "version": r.version,
                 "profile": r.profile_json,
-                "change_summary": r.change_summary,
+                "change_summary": display_summary(r.change_summary),
                 "created_at": r.created_at,
             }
             for r in db.scalars(
@@ -315,7 +334,11 @@ def create_app(
             c = character(db, cid)
             profile = Profile.model_validate(revision(db, c, body.version).profile_json)
             save_profile(
-                db, c, profile, body.expected_version, f"恢复自版本 {body.version}"
+                db,
+                c,
+                profile,
+                body.expected_version,
+                f"Restored from version {body.version}",
             )
             db.commit()
             return serialize(db, c)
@@ -343,7 +366,7 @@ def create_app(
     def conversation(db, conv_id):
         conv = db.get(Conversation, str(conv_id))
         if not conv:
-            raise HTTPException(404, "对话不存在。")
+            raise HTTPException(404, "Conversation not found.")
         return conv
 
     def messages(db, conv_id):
@@ -386,7 +409,9 @@ def create_app(
             )
             if existing:
                 if existing.content != body.content:
-                    raise HTTPException(409, "此请求编号已用于另一条消息。")
+                    raise HTTPException(
+                        409, "This request ID was already used for a different message."
+                    )
                 return messages(db, conv.id)
             # Bound rows read from DB too; old messages remain on disk.
             recent = list(
@@ -409,7 +434,7 @@ def create_app(
                 raise HTTPException(422, str(exc)) from None
             response = app.state.text.chat(context)
             if not isinstance(response, str) or not response.strip():
-                raise ProviderError("模型没有返回有效回复。")
+                raise ProviderError("The model did not return a valid reply.")
             # Both messages commit together. Failed remote calls leave neither a false reply nor a duplicate user turn.
             for role, content in (("user", body.content), ("assistant", response)):
                 db.add(
@@ -429,7 +454,7 @@ def create_app(
     def portrait(db, cid, image_id):
         item = db.get(Portrait, str(image_id))
         if not item or item.character_id != str(cid):
-            raise HTTPException(404, "图片不存在。")
+            raise HTTPException(404, "Image not found.")
         return item
 
     def image_json(item):
@@ -450,12 +475,16 @@ def create_app(
             if c.current_image_id != (
                 str(body.expected_image_id) if body.expected_image_id else None
             ):
-                raise HTTPException(409, "当前头像已改变，请刷新后重试。")
+                raise HTTPException(
+                    409, "The current portrait has changed. Refresh before retrying."
+                )
             source = None
             parent_id = None
             if editing:
                 if not c.current_image_id or not body.instruction.strip():
-                    raise HTTPException(422, "请先选择头像并填写修改要求。")
+                    raise HTTPException(
+                        422, "Select a portrait and enter an edit instruction first."
+                    )
                 parent = portrait(db, c.id, c.current_image_id)
                 source = (settings.image_directory / parent.file_path).read_bytes()
                 parent_id = parent.id
@@ -468,7 +497,10 @@ def create_app(
                 )
             )
             if count >= settings.image_requests_per_hour:
-                raise HTTPException(429, "本角色本小时的图片请求已达上限，请稍后再试。")
+                raise HTTPException(
+                    429,
+                    "This character has reached its hourly image request limit. Please try again later.",
+                )
             profile = Profile.model_validate(revision(db, c).profile_json)
             prompt = (
                 "Edit this existing fictional character portrait. Preserve identity and all details except "
@@ -485,18 +517,20 @@ def create_app(
             db.commit()  # Failed requests also count toward the paid-call budget.
             data = app.state.images.render(prompt, source)
             if len(data) > settings.max_image_bytes:
-                raise ProviderError("图片超过大小限制。")
+                raise ProviderError("The image exceeds the size limit.")
             try:
                 with Image.open(BytesIO(data)) as image:
                     if image.width * image.height > 16_000_000:
-                        raise ProviderError("图片分辨率超过限制。")
+                        raise ProviderError("The image resolution exceeds the limit.")
                     normalized = BytesIO()
                     image.convert("RGB").save(normalized, format="PNG")
                 data = normalized.getvalue()
                 if len(data) > settings.max_image_bytes:
-                    raise ProviderError("图片超过大小限制。")
+                    raise ProviderError("The image exceeds the size limit.")
             except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
-                raise ProviderError("图片服务没有返回有效图片。") from None
+                raise ProviderError(
+                    "The image service did not return a valid image."
+                ) from None
             image_id = uid()
             version = (
                 db.scalar(
@@ -570,11 +604,16 @@ def create_app(
             c = character(db, cid)
             item = portrait(db, cid, image_id)
             if c.current_image_id == item.id:
-                raise HTTPException(409, "请先选择其他头像，再删除此图片。")
+                raise HTTPException(
+                    409, "Select another portrait before deleting this image."
+                )
             if db.scalar(
                 select(Portrait.id).where(Portrait.parent_image_id == item.id)
             ):
-                raise HTTPException(409, "此图片是其他版本的原图，请保留版本链。")
+                raise HTTPException(
+                    409,
+                    "This image is the source of another revision. Keep it to preserve the revision history.",
+                )
             db.delete(item)
             db.commit()
             (settings.image_directory / item.file_path).unlink(missing_ok=True)

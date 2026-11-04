@@ -1,5 +1,5 @@
-# EchoLoom MVP 后端
+# EchoLoom MVP backend
 
-FastAPI 入口：`echoloom.api:app`。角色结构在 `schemas.py`，SQLAlchemy 模型在 `db.py`，模型服务接口与 OpenAI 适配器在 `providers.py`，配置在 `config.py`。
+FastAPI entry point: `echoloom.api:app`. Validated profiles are in `schemas.py`, SQLAlchemy models in `db.py`, provider interfaces and OpenAI adapters in `providers.py`, and environment settings in `config.py`.
 
-安装、迁移、启动与验收见[开发说明](../../docs/mvp/README.md)。多文档抽取与证据重建仍属于后续研究工作。
+See the [MVP development guide](../../docs/mvp/README.md) for installation, migrations, startup, updates, and validation. Multi-document extraction and evidence reconstruction remain future research work.

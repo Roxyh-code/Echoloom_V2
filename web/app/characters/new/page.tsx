@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api, Character, Health } from "@/components/api";
 const example =
-  "一位二十多岁的神秘图书管理员，银色长发，蓝色眼睛。她安静、聪明，说话带一点讽刺，喜欢天文学。不擅长直接表达关心，但会默默记住朋友的喜好。";
+  "A mysterious librarian in her twenties with long silver hair and blue eyes. She is reserved, intelligent and slightly sarcastic, and loves astronomy. She rarely expresses affection directly, but quietly remembers her friends' preferences.";
 export default function CreateCharacter() {
   const router = useRouter();
   const guard = useRef(false);
@@ -38,20 +38,21 @@ export default function CreateCharacter() {
   return (
     <main className="create-container">
       <Link className="back-link" href="/characters">
-        ← 回到我的角色
+        ← Back to My Characters
       </Link>
       <div className="create-heading">
         <span className="spark">✦</span>
         <p className="eyebrow">FROM AN IDEA TO AN IDENTITY</p>
-        <h1>让你的角色，鲜活起来。</h1>
+        <h1>Bring your character to life.</h1>
         <p className="muted">
-          说说 TA 是谁。外貌、性格、经历，或只是一个小小的灵感。
+          Tell us who they are: their looks, personality, history, or just a
+          spark of inspiration.
           <br />
-          我们会一起把它变成可以交流的角色。
+          Together, we will shape someone you can talk to.
         </p>
       </div>
       <form onSubmit={submit} className="panel create-form">
-        <label htmlFor="description">你想遇见怎样的角色？</label>
+        <label htmlFor="description">Who would you like to meet?</label>
         <textarea
           id="description"
           autoFocus
@@ -60,7 +61,7 @@ export default function CreateCharacter() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           disabled={busy}
-          placeholder="TA 的名字、样子、性格，或某个特别的习惯…"
+          placeholder="Their name, appearance, personality, or a distinctive habit…"
         />
         <div className="input-footer">
           <button
@@ -69,7 +70,7 @@ export default function CreateCharacter() {
             disabled={busy}
             onClick={() => setDescription(example)}
           >
-            ✧ 试试一个灵感
+            ✧ Try an example
           </button>
           <small>
             {description.length} / {limit}
@@ -77,8 +78,8 @@ export default function CreateCharacter() {
         </div>
         {health && !health.text_configured && (
           <p className="notice">
-            文字模型尚未配置。请在后端 .env
-            中填写模型和密钥后重启服务；系统不会用示例回复冒充生成结果。
+            The text model is not configured. Set the model and API key in the
+            server .env file, then restart the backend.
           </p>
         )}
         {error && (
@@ -90,10 +91,10 @@ export default function CreateCharacter() {
           className="button primary full"
           disabled={busy || !description.trim()}
         >
-          {busy ? "正在赋予角色个性，请稍等…" : "创造我的角色 →"}
+          {busy ? "Bringing your character to life…" : "Create my character →"}
         </button>
         <p className="form-note">
-          生成后，你可以自由编辑每一个细节。头像由你决定何时生成。
+          Every detail is editable. Generate a portrait whenever you are ready.
         </p>
       </form>
     </main>

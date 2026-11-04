@@ -16,7 +16,7 @@ from echoloom.db import (
 )
 
 
-def send(client, conv, text="你好", request_id=None):
+def send(client, conv, text="Hello", request_id=None):
     return client.post(
         f"/api/conversations/{conv}/messages",
         json={"content": text, "request_id": request_id or str(uuid4())},
@@ -28,7 +28,7 @@ def test_create_edit_persist_across_app_restart(setup, character):
     c = character
     assert c["profile_version"] == 1
     assert client.get("/api/characters").json()[0]["id"] == c["id"]
-    c["profile"]["name"] = "薇拉"
+    c["profile"]["name"] = "Vera"
     result = client.patch(
         f"/api/characters/{c['id']}",
         json={"profile": c["profile"], "expected_version": 1},
@@ -39,7 +39,7 @@ def test_create_edit_persist_across_app_restart(setup, character):
     restarted_engine = make_engine(settings.database_url)
     with TestClient(create_app(settings, text, images, restarted_engine)) as restarted:
         saved = restarted.get(f"/api/characters/{c['id']}").json()
-        assert saved["profile"]["name"] == "薇拉"
+        assert saved["profile"]["name"] == "Vera"
         assert saved["conversation_id"] == c["conversation_id"]
         assert len(restarted.get(f"/api/characters/{c['id']}/versions").json()) == 2
     restarted_engine.dispose()
@@ -76,7 +76,8 @@ def test_chat_refine_restore_preserves_identity_history_and_portrait(setup, char
     assert send(client, conv).status_code == 200
     old_messages = client.get(f"/api/conversations/{conv}/messages").json()
     preview = client.post(
-        base + "/refine", json={"instruction": "让她更冷淡", "expected_version": 1}
+        base + "/refine",
+        json={"instruction": "Make her more distant", "expected_version": 1},
     ).json()
     assert preview["changes"][0]["path"] == "personality.core_traits"
     assert client.get(base).json()["profile_version"] == 1
@@ -94,10 +95,10 @@ def test_chat_refine_restore_preserves_identity_history_and_portrait(setup, char
         ).json()["profile_version"]
         == 2
     )
-    result = send(client, conv, "你今天在想什么？").json()
+    result = send(client, conv, "What are you thinking about today?").json()
     assert result[:2] == old_messages
     assert result[-1]["profile_version"] == 2
-    assert "冷淡" in text.calls[-1][1][0]["content"]
+    assert "Distant" in text.calls[-1][1][0]["content"]
     assert len(text.calls[-1][1]) == 4  # system + prior turn + new user
     restored = client.post(
         base + "/restore", json={"version": 1, "expected_version": 2}
@@ -112,9 +113,9 @@ def test_stale_profile_and_proposal_do_not_overwrite(setup, character):
     client = setup[0]
     base = f"/api/characters/{character['id']}"
     proposal = client.post(
-        base + "/refine", json={"instruction": "冷淡", "expected_version": 1}
+        base + "/refine", json={"instruction": "Distant", "expected_version": 1}
     ).json()
-    profile = character["profile"] | {"name": "新名字"}
+    profile = character["profile"] | {"name": "New name"}
     assert (
         client.patch(base, json={"profile": profile, "expected_version": 1}).status_code
         == 200
@@ -131,7 +132,7 @@ def test_stale_profile_and_proposal_do_not_overwrite(setup, character):
         ).status_code
         == 409
     )
-    assert client.get(base).json()["profile"]["name"] == "新名字"
+    assert client.get(base).json()["profile"]["name"] == "New name"
 
 
 def test_failed_chat_retry_and_repeated_request_are_atomic(setup, character):
@@ -175,7 +176,10 @@ def test_image_candidate_edit_restore_ownership_and_cleanup(setup, character):
     client.post(base + f"/images/{image['id']}/select")
     edited = client.post(
         base + "/images/edit",
-        json={"instruction": "换成蓝头发", "expected_image_id": image["id"]},
+        json={
+            "instruction": "Change the hair to blue",
+            "expected_image_id": image["id"],
+        },
     ).json()
     assert images.sources[-1] == original_bytes
     assert edited["parent_image_id"] == image["id"]
@@ -244,10 +248,55 @@ def test_multiple_conversations_are_separate(setup, character):
     client = setup[0]
     old = character["conversation_id"]
     new = client.post(f"/api/characters/{character['id']}/conversations").json()["id"]
-    send(client, old, "老对话")
+    send(client, old, "Old conversation")
     assert client.get(f"/api/conversations/{new}/messages").json() == []
-    send(client, new, "新对话")
+    send(client, new, "New conversation")
     assert (
         client.get(f"/api/conversations/{old}/messages").json()[0]["content"]
-        == "老对话"
+        == "Old conversation"
     )
+
+
+def test_english_display_preserves_legacy_records_and_portrait(setup, character):
+    import copy
+
+    client, text, images, settings, engine = setup
+    cid = character["id"]
+    base = f"/api/characters/{cid}"
+    legacy_name = "\u79e6\u5f7b"
+    legacy_summary = "\u521b\u5efa\u89d2\u8272"
+    with sessions(engine)() as db:
+        stored = db.scalar(
+            select(ProfileRevision).where(ProfileRevision.character_id == cid)
+        )
+        profile = copy.deepcopy(stored.profile_json)
+        profile["name"] = legacy_name
+        stored.profile_json = profile
+        stored.change_summary = legacy_summary
+        db.commit()
+    portrait = client.post(base + "/images/generate", json={}).json()
+    client.post(base + f"/images/{portrait['id']}/select")
+    old_turn = send(client, character["conversation_id"], "\u4f60\u597d").json()
+    before = client.get(base).json()
+    image_bytes = client.get(portrait["url"]).content
+    restarted_engine = make_engine(settings.database_url)
+    with TestClient(create_app(settings, text, images, restarted_engine)) as restarted:
+        assert restarted.get(base).json() == before
+        assert restarted.get(base).json()["profile"]["name"] == legacy_name
+        assert (
+            restarted.get(
+                f"/api/conversations/{character['conversation_id']}/messages"
+            ).json()
+            == old_turn
+        )
+        assert restarted.get(portrait["url"]).content == image_bytes
+        assert (
+            restarted.get(base + "/versions").json()[0]["change_summary"]
+            == "Create Character"
+        )
+    with sessions(engine)() as db:
+        stored = db.scalar(
+            select(ProfileRevision).where(ProfileRevision.character_id == cid)
+        )
+        assert stored.change_summary == legacy_summary
+    restarted_engine.dispose()
