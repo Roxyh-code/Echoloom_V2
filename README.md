@@ -2,7 +2,9 @@
 
 根据不完整、多来源文本重建虚构人物，并将人物判断关联到原文证据。
 
-**当前任务：先为 Personality Schema 和 Evidence Schema 建立理论与方法依据。** 不把角色扮演成绩等同于重建正确性，也不开发真人心理测量工具。抽取原型尚未实现。
+**MVP v0.1 已进入实现阶段：创建 → 编辑 → 对话 → 持续调整。** 本地应用的启动、配置和验证见 **[MVP 开发说明](docs/mvp/README.md)**，需求见 [PRD](docs/mvp/prd-v0.1.md)。使用 FastAPI + SQLite + Next.js，模型凭据由服务端配置。
+
+原有研究线继续保留：为 Personality Schema 和 Evidence Schema 建立理论与方法依据。不把角色扮演成绩等同于重建正确性，也不开发真人心理测量工具；多文档抽取原型仍未实现。
 
 ## 先从这里看
 
@@ -19,8 +21,10 @@ docs/            项目路线、任务、设计、评估及讨论准备
 schemas/         研究与手工验证后再正式化的Schema
 data/            后续原创角色和标注样例（区别于literature/data文献数据）
 experiments/     后续方法比较与实验记录
-src/echoloom/    后续抽取原型
-tests/          后续数据约束与行为验证
+src/echoloom/    MVP API、数据模型与 AI 适配器
+web/            Next.js 角色工作室
+alembic/        MVP 数据库迁移
+tests/mvp/      MVP 业务与接口回归验证
 ```
 
 旧39篇宽范围报告已归档到 `literature/output/archive-v1/`，不作为当前阅读顺序。项目总体框架见[路线图](docs/roadmap.md)与[任务板](docs/tasks.md)。本地 `work/` 为临时文件，`outputs/` 为可下载交付副本；Git内的规范报告位置为 `literature/output/`。下载的原始PDF与提取文本不上传Git。

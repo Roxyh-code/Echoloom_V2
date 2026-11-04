@@ -35,3 +35,10 @@ htmlcov/
 # OS files
 .DS_Store
 Thumbs.db
+
+# MVP frontend
+/web/node_modules/
+/web/.next/
+/web/playwright-report/
+/web/test-results/
+/web/*.tsbuildinfo

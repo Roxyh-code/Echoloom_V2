@@ -1,7 +1,5 @@
-# 原型实现位置
+# EchoLoom MVP 后端
 
-这里未来放 Python 包，当前尚无可运行代码，也未安装依赖。
+FastAPI 入口：`echoloom.api:app`。角色结构在 `schemas.py`，SQLAlchemy 模型在 `db.py`，模型服务接口与 OpenAI 适配器在 `providers.py`，配置在 `config.py`。
 
-待 Schema 与人工样例完成后，按实际需要增加 `ingestion`（解析与定位）、`extraction`（人物和主张）、`reconciliation`（去重与冲突）、`modeling`（人格解释）、`storage` 与 `cli`。这些是模块候选，不预先创建空类或微服务。
-
-实现第一条流水线时补项目依赖、配置示例、运行命令、错误处理和输出样例。模型生成内容必须经过结构校验，来源定位可独立核查。
+安装、迁移、启动与验收见[开发说明](../../docs/mvp/README.md)。多文档抽取与证据重建仍属于后续研究工作。

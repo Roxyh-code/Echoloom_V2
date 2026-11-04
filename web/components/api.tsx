@@ -1,0 +1,103 @@
+export type Profile = {
+  name: string;
+  short_description: string;
+  backstory: string;
+  visual_style: string;
+  appearance: Record<string, string>;
+  personality: Record<string, string[]>;
+  speech_style: { tone: string; vocabulary: string; speaking_habits: string[] };
+  interaction_preferences: Record<string, string>;
+};
+export type Character = {
+  id: string;
+  profile: Profile;
+  profile_version: number;
+  current_image_id: string | null;
+  conversation_id: string;
+  original_description: string;
+  created_at: string;
+  updated_at: string;
+};
+export type Portrait = {
+  id: string;
+  version: number;
+  parent_image_id: string | null;
+  url: string;
+  prompt: string;
+  created_at: string;
+};
+export type Message = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  profile_version: number;
+  request_id: string;
+};
+export type Proposal = {
+  proposal_id: string;
+  changes: {
+    path: string;
+    before: string | string[];
+    after: string | string[];
+  }[];
+  explanation: string;
+};
+export type Revision = {
+  version: number;
+  change_summary: string;
+  created_at: string;
+  profile: Profile;
+};
+export type Health = {
+  text_configured: boolean;
+  image_configured: boolean;
+  max_profile_input_chars: number;
+  database_ready: boolean;
+};
+export async function api<T>(
+  path: string,
+  body?: unknown,
+  method?: string,
+): Promise<T> {
+  const response = await fetch(`/api${path}`, {
+    method: method || (body === undefined ? "GET" : "POST"),
+    headers: body === undefined ? {} : { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    const detail = data?.detail;
+    throw new Error(
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? "输入格式不正确，请检查字段内容和长度。"
+          : "服务暂时不可用，请确认后端已启动后重试。",
+    );
+  }
+  return response.status === 204 ? (undefined as T) : response.json();
+}
+export function portraitUrl(character: Character) {
+  return character.current_image_id
+    ? `/api/characters/${character.id}/images/${character.current_image_id}/file`
+    : null;
+}
+export function Avatar({
+  character,
+  large = false,
+}: {
+  character: Character;
+  large?: boolean;
+}) {
+  const url = portraitUrl(character);
+  return (
+    <div className={`avatar ${large ? "large" : ""}`}>
+      {url ? (
+        <img src={url} alt={`${character.profile.name} 的头像`} />
+      ) : (
+        <span>{character.profile.name.slice(0, 1)}</span>
+      )}
+    </div>
+  );
+}
