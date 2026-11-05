@@ -81,7 +81,7 @@ OpenAI is the first image adapter because its SDK covers generation and source-i
 
 ## Interactive story mode
 
-The new activity workflow starts inside chat: **＋ → Do something together → Send invitation → Begin**. It includes staged reading, decisions, free contributions, latest-segment rewrites, undo, progress and independent persistence. See the [story-mode guide](story-mode.md) for usage, data boundaries and verification.
+The new activity workflow starts inside chat: **Do something together → Send invitation → Begin** above the chat input. It includes staged reading, decisions, free contributions, latest-segment rewrites, undo, progress and independent persistence. See the [story-mode guide](story-mode.md) for usage, data boundaries and verification.
 
 **This release requires `alembic upgrade head` before restarting the backend.** Migration 0002 preserves existing messages while adding mixed-timeline ordering and separate story tables. No new provider or dependency installation is required.
 

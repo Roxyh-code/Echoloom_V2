@@ -297,6 +297,26 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
               )}
             </div>
           )}
+          <div className="chat-activity-bar">
+            <button
+              type="button"
+              className="button activity-invite"
+              aria-haspopup="dialog"
+              aria-expanded={inviting}
+              disabled={busy}
+              onClick={() => {
+                setExtras(false);
+                setInviting(true);
+              }}
+            >
+              <span className="activity-spark" aria-hidden="true">
+                ✦
+              </span>
+              Do something together
+              <span aria-hidden="true">→</span>
+            </button>
+            <span className="activity-hint">Turn a moment into a story.</span>
+          </div>
           <form
             className="chat-composer"
             onSubmit={(e) => {
@@ -317,15 +337,6 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
               </button>
               {extras && (
                 <div className="extras-menu">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setExtras(false);
-                      setInviting(true);
-                    }}
-                  >
-                    Do something together
-                  </button>
                   <button
                     type="button"
                     onClick={() => {

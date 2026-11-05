@@ -2,7 +2,7 @@
 
 Create a fictional character, shape their identity, and return to an ongoing conversation.
 
-**MVP v0.1:** a local character studio using FastAPI, SQLite, and Next.js. It includes structured profiles, editing, persistent chat, AI refinement previews, profile history, portrait generation/editing, and independent image revisions. Interactive activities are now available from the chat composer: **＋ → Do something together**. See the [story-mode guide](docs/mvp/story-mode.md). The interface and new generated text use English. Existing character content and conversations remain unchanged.
+**MVP v0.1:** a local character studio using FastAPI, SQLite, and Next.js. It includes structured profiles, editing, persistent chat, AI refinement previews, profile history, portrait generation/editing, and independent image revisions. Interactive activities are now available from the chat composer: the visible **Do something together** button above the chat input. See the [story-mode guide](docs/mvp/story-mode.md). The interface and new generated text use English. Existing character content and conversations remain unchanged.
 
 Start with the **[MVP development and startup guide](docs/mvp/README.md)**. It includes Windows PowerShell and macOS/Linux commands, model configuration, safe updates, and tests. Provider credentials are configured on the server; real AI operations require an API account with available credits and model access.
 

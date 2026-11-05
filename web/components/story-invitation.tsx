@@ -47,11 +47,14 @@ export function StoryInvitation({
     dialog.current?.showModal();
     input.current?.focus();
     return () => {
-      if (trigger?.isConnected && trigger.tagName === "BUTTON") trigger.focus();
-      else
-        document
-          .querySelector<HTMLButtonElement>('[aria-label="Open activities"]')
-          ?.focus();
+      // Wait until the modal has been removed so outside controls are no longer inert.
+      requestAnimationFrame(() => {
+        const visibleEntry =
+          document.querySelector<HTMLButtonElement>(".activity-invite");
+        if (visibleEntry) visibleEntry.focus();
+        else if (trigger?.isConnected && trigger.tagName === "BUTTON")
+          trigger.focus();
+      });
     };
   }, [key]);
   useEffect(() => {

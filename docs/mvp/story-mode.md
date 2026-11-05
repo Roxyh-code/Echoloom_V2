@@ -26,7 +26,7 @@ On macOS/Linux, use `.venv/bin/python -m alembic upgrade head`, then the existin
 ## Use the feature
 
 1. Open an existing character's chat. No minimum number of chat messages is required.
-2. Click **＋ → Do something together**.
+2. Click the visible **Do something together** button above the chat input. It is always shown on desktop and mobile; no menu needs to be opened.
 3. Describe a scene, optionally add your story name, relationship, atmosphere, and boundaries. Press **Send invitation**.
 4. A neutral activity card appears in the same conversation. Creating the invitation makes **no model call** and does not claim the character accepted it.
 5. Click **Begin**. The reader generates one complete, validated segment and then reveals saved blocks progressively. Model/provider configuration is the same as ordinary text chat.

@@ -30,7 +30,10 @@ test("chat invitation → scene → choice → interruption → rewrite → undo
     },
   });
   await page.goto(`/characters/${character.id}/chat`);
-  await page.getByRole("button", { name: "Open activities" }).click();
+  await expect(
+    page.getByRole("button", { name: "Do something together" }),
+  ).toBeInViewport();
+  await expect(page.locator(".extras-menu")).toHaveCount(0);
   await page.getByRole("button", { name: "Do something together" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page
@@ -184,7 +187,6 @@ test("invitation keyboard close preserves the draft and restores focus", async (
   ).json();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/characters/${c.id}/chat`);
-  await page.getByRole("button", { name: "Open activities" }).click();
   await page.getByRole("button", { name: "Do something together" }).click();
   await page
     .getByLabel("Your scene", { exact: true })
@@ -192,9 +194,8 @@ test("invitation keyboard close preserves the draft and restores focus", async (
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Open activities" }),
+    page.getByRole("button", { name: "Do something together" }),
   ).toBeFocused();
-  await page.getByRole("button", { name: "Open activities" }).click();
   await page.getByRole("button", { name: "Do something together" }).click();
   await expect(page.getByLabel("Your scene", { exact: true })).toHaveValue(
     "A quiet walk beside a lake.",
