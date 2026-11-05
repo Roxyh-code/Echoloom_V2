@@ -152,18 +152,9 @@ export function LifeCompanion({
           onClick={() => setOpen(true)}
         >
           <span aria-hidden="true">✧ </span>
-          {activeHere
-            ? "My calendar"
-            : status?.connected
-              ? "Use my calendar"
-              : "Connect calendar"}
+          Sync my schedule
           <span aria-hidden="true"> →</span>
         </button>
-        {activeHere && (
-          <span className="small">
-            {status?.status === "ready" ? "Connected" : "Needs attention"}
-          </span>
-        )}
       </section>
       <dialog
         ref={dialog}

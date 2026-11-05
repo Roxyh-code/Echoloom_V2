@@ -255,25 +255,6 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
           <Avatar character={character} large />
           <h1>{character.profile.name}</h1>
           <p>{character.profile.short_description}</p>
-          <LifeCompanion
-            character={character}
-            conversation={conversation}
-            onStatus={setCompanion}
-            onWelcome={async (pending, error) => {
-              setWelcoming(pending);
-              setWelcomeError(error || "");
-              if (!pending) {
-                try {
-                  const ms = await api<TimelineItem[]>(
-                    `/conversations/${conversation}/timeline`,
-                  );
-                  setMessages(ms);
-                } catch {
-                  /* Polling retries. */
-                }
-              }
-            }}
-          />
           <div className="tags">
             {character.profile.personality.core_traits
               .slice(0, 4)
@@ -426,7 +407,25 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
               Do something together
               <span aria-hidden="true">→</span>
             </button>
-            <span className="activity-hint">Turn a moment into a story.</span>
+            <LifeCompanion
+              character={character}
+              conversation={conversation}
+              onStatus={setCompanion}
+              onWelcome={async (pending, error) => {
+                setWelcoming(pending);
+                setWelcomeError(error || "");
+                if (!pending) {
+                  try {
+                    const ms = await api<TimelineItem[]>(
+                      `/conversations/${conversation}/timeline`,
+                    );
+                    setMessages(ms);
+                  } catch {
+                    /* Polling retries. */
+                  }
+                }
+              }}
+            />
           </div>
           <form
             className="chat-composer"

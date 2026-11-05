@@ -1441,15 +1441,6 @@ small,
 .activity-spark {
   font-size: 18px;
 }
-.activity-hint {
-  font-size: 11px;
-  color: var(--muted);
-}
-@media (max-width: 900px) {
-  .activity-hint {
-    display: none;
-  }
-}
 @media (max-width: 640px) {
   .chat-activity-bar {
     padding: 10px 12px 0;
@@ -1648,4 +1639,54 @@ small,
   display: grid;
   gap: 0.4rem;
   margin: 0.8rem 0;
+}
+
+/* Both shared experiences live together immediately above the message input. */
+.chat-activity-bar {
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.chat-activity-bar .life-companion-entry {
+  margin: 0;
+  padding: 0;
+  flex: 0 1 auto;
+}
+.chat-activity-bar .companion-cta {
+  min-height: 44px;
+  gap: 10px;
+  background: var(--lavender);
+  color: var(--purple-dark);
+  border-color: #c7b7dc;
+  font-weight: 600;
+}
+.chat-activity-bar .companion-cta:hover {
+  background: #e3d9f1;
+  border-color: #aa94c8;
+}
+@media (max-width: 640px) {
+  .chat-activity-bar {
+    gap: 8px;
+    align-items: stretch;
+  }
+  .chat-activity-bar > .activity-invite,
+  .chat-activity-bar .life-companion-entry {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    width: auto;
+  }
+  .chat-activity-bar .companion-cta,
+  .chat-activity-bar > .activity-invite {
+    height: 100%;
+    width: 100%;
+    font-size: 11px;
+    padding: 10px 8px;
+    gap: 6px;
+    white-space: normal;
+    justify-content: center;
+  }
+  .chat-activity-bar .activity-invite > span:last-child,
+  .chat-activity-bar .companion-cta > span:last-child {
+    display: none;
+  }
 }

@@ -42,11 +42,10 @@ export default function Library() {
     <main className="container">
       <section className="page-intro">
         <div>
-          <p className="eyebrow">YOUR LITTLE UNIVERSE</p>
-          <h1>Every character has a story.</h1>
+          <p className="eyebrow">A LITTLE CLOSER, EVERY DAY</p>
+          <h1>Your favorite character. By your side.</h1>
           <p className="muted">
-            Create someone new, or pick up where your last conversation left
-            off.
+            Chat, share stories, and feel a little closer through everyday life.
           </p>
         </div>
         <Link className="button primary" href="/characters/new">
@@ -63,13 +62,11 @@ export default function Library() {
       ) : !characters.length && !error ? (
         <section className="empty-state">
           <div className="empty-art">✧</div>
-          <p className="eyebrow">A STORY STARTS WITH A SPARK</p>
+          <p className="eyebrow">SOMEONE TO SHARE YOUR DAY WITH</p>
           <h2>Who will your first character be?</h2>
           <p>
-            A stargazing librarian. A sharp-tongued traveler with a gentle
-            heart.
-            <br />
-            Bring someone from your imagination to life in a few words.
+            Bring a favorite character to life, and make your first conversation
+            the start of something familiar.
           </p>
           <Link className="button primary" href="/characters/new">
             Start creating →

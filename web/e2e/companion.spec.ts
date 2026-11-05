@@ -22,7 +22,13 @@ test("local account → mock Google consent → check-ins → switch → disconn
   ).json();
   await page.goto(`/characters/${character.id}/chat`);
   await expect(
-    page.getByRole("button", { name: "Connect calendar" }),
+    page
+      .locator(".chat-activity-bar")
+      .getByRole("button", { name: "Sync my schedule" }),
+  ).toBeVisible();
+  await expect(page.getByText("Turn a moment into a story.")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Sync my schedule" }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Do something together" }),
@@ -31,7 +37,7 @@ test("local account → mock Google consent → check-ins → switch → disconn
     path: "test-results/companion-desktop.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Connect calendar" }).click();
+  await page.getByRole("button", { name: "Sync my schedule" }).click();
   await page.getByLabel("Local username").fill("demo-owner");
   await page.getByLabel("Local password").fill("demo-password-123");
   await page.getByRole("button", { name: "Create local account" }).click();
@@ -56,7 +62,7 @@ test("local account → mock Google consent → check-ins → switch → disconn
   await expect(page.locator(".companion-message-label")).toHaveCount(1);
   await expect(page.getByText(/You have Physics exam coming up/)).toBeVisible();
   for (let attempt = 0; attempt < 2; attempt++) {
-    await page.getByRole("button", { name: "My calendar" }).click();
+    await page.getByRole("button", { name: "Sync my schedule" }).click();
     await page.getByRole("button", { name: "Sync now" }).click();
     await expect(page.getByRole("dialog")).not.toBeVisible();
     await expect(page.locator(".companion-message-label")).toHaveCount(2);
@@ -77,10 +83,10 @@ test("local account → mock Google consent → check-ins → switch → disconn
     timeout: 15000,
   });
   await page.goto(`/characters/${second.id}/chat`);
-  await page.getByRole("button", { name: "Use my calendar" }).click();
+  await page.getByRole("button", { name: "Sync my schedule" }).click();
   await page.getByRole("button", { name: /Make .* my companion/ }).click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
-  await page.getByRole("button", { name: "My calendar" }).click();
+  await page.getByRole("button", { name: "Sync my schedule" }).click();
   await expect(
     page.getByRole("button", { name: "Pause check-ins", exact: true }),
   ).toBeVisible();
@@ -114,13 +120,13 @@ test("mobile companion discovery and cancelled authorization leave chat usable",
   await page.context().addCookies((await request.storageState()).cookies);
   await page.goto(`/characters/${char.id}/chat`);
   await expect(
-    page.getByRole("button", { name: "Connect calendar" }),
+    page.getByRole("button", { name: "Sync my schedule" }),
   ).toBeVisible();
   await page.screenshot({
     path: "test-results/companion-mobile.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Connect calendar" }).click();
+  await page.getByRole("button", { name: "Sync my schedule" }).click();
   await page.route("https://accounts.google.com/**", async (route) => {
     const state = new URL(route.request().url()).searchParams.get("state");
     await route.fulfill({
@@ -137,7 +143,7 @@ test("mobile companion discovery and cancelled authorization leave chat usable",
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(
-    page.getByRole("button", { name: "Connect calendar" }),
+    page.getByRole("button", { name: "Sync my schedule" }),
   ).toBeFocused();
   await page.getByLabel("Message", { exact: true }).fill("Hello");
   await page.getByRole("button", { name: "Send ↑" }).click();

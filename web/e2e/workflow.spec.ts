@@ -11,6 +11,15 @@ test("create → edit → chat → refine → portrait edit → restore → retu
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/characters");
   await expect(
+    page.getByRole("heading", {
+      name: "Your favorite character. By your side.",
+    }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: "test-results/companion-home.png",
+    fullPage: true,
+  });
+  await expect(
     page.getByRole("heading", { name: "Who will your first character be?" }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Start creating →" }).click();
