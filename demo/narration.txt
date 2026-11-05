@@ -1,0 +1,33 @@
+Welcome to Echo Loom. This walkthrough uses sample AI responses and prepared portrait assets.
+
+Start with a few words about someone you would like to meet.
+
+A structured profile keeps appearance, personality, and speaking style editable.
+
+Make a small change. The same character identity is preserved.
+
+Generate a portrait from the appearance profile, then preview the result before selecting it.
+
+Edit the selected portrait with a simple instruction. The original image stays available.
+
+Compare saved versions and switch back at any time, without recreating the character.
+
+Chat with the saved character. Their latest profile guides the conversation.
+
+Ready for a shared scene? The activity button is always visible.
+
+Describe the scene, your relationship, and anything you want to avoid.
+
+Your invitation becomes a scene card in this conversation.
+
+Story mode presents narration, character dialogue, and AI-assisted player lines.
+
+Read at your own pace: step through, play, pause, or show the whole segment.
+
+Important decisions are yours. Choose an intention or write your own response.
+
+The next scene responds to your choice while keeping the character consistent.
+
+Return to chat anytime. The scene card keeps your story ready to continue.
+
+Create once. Keep shaping the character — and pick up where you left off.

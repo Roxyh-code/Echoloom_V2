@@ -1,0 +1,67 @@
+1
+00:00:00,001 --> 00:00:06,266
+Welcome to Echo Loom. This walkthrough uses sample AI responses and prepared portrait assets.
+
+2
+00:00:06,266 --> 00:00:20,235
+Start with a few words about someone you would like to meet.
+
+3
+00:00:20,235 --> 00:00:25,489
+A structured profile keeps appearance, personality, and speaking style editable.
+
+4
+00:00:25,489 --> 00:00:30,623
+Make a small change. The same character identity is preserved.
+
+5
+00:00:30,623 --> 00:00:42,417
+Generate a portrait from the appearance profile, then preview the result before selecting it.
+
+6
+00:00:42,417 --> 00:01:00,133
+Edit the selected portrait with a simple instruction. The original image stays available.
+
+7
+00:01:00,133 --> 00:01:06,491
+Compare saved versions and switch back at any time, without recreating the character.
+
+8
+00:01:06,491 --> 00:01:28,405
+Chat with the saved character. Their latest profile guides the conversation.
+
+9
+00:01:28,405 --> 00:01:32,975
+Ready for a shared scene? The activity button is always visible.
+
+10
+00:01:32,975 --> 00:01:41,724
+Describe the scene, your relationship, and anything you want to avoid.
+
+11
+00:01:41,724 --> 00:01:48,991
+Your invitation becomes a scene card in this conversation.
+
+12
+00:01:48,991 --> 00:01:58,465
+Story mode presents narration, character dialogue, and AI-assisted player lines.
+
+13
+00:01:58,465 --> 00:02:03,332
+Read at your own pace: step through, play, pause, or show the whole segment.
+
+14
+00:02:03,332 --> 00:02:11,487
+Important decisions are yours. Choose an intention or write your own response.
+
+15
+00:02:11,487 --> 00:02:19,423
+The next scene responds to your choice while keeping the character consistent.
+
+16
+00:02:19,423 --> 00:02:26,433
+Return to chat anytime. The scene card keeps your story ready to continue.
+
+17
+00:02:26,433 --> 00:02:31,467
+Create once. Keep shaping the character — and pick up where you left off.
