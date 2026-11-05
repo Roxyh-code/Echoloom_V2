@@ -30,6 +30,8 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
   const [inviting, setInviting] = useState(false);
   const [past, setPast] = useState(false);
   const [companion, setCompanion] = useState<CompanionStatus | null>(null);
+  const [welcoming, setWelcoming] = useState(false);
+  const [welcomeError, setWelcomeError] = useState("");
   const autoScroll = useRef(true);
   useEffect(() => {
     let active = true;
@@ -112,7 +114,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
     };
   }, [companion?.enabled, companion?.conversation_id, conversation]);
   async function send(failed?: { content: string; request_id: string }) {
-    if (guard.current || (!failed && !input.trim())) return;
+    if (welcoming || guard.current || (!failed && !input.trim())) return;
     const body = failed || {
       content: input.trim(),
       request_id: crypto.randomUUID(),
@@ -138,7 +140,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
     }
   }
   async function switchConversation(cid: string) {
-    if (guard.current) return;
+    if (welcoming || guard.current) return;
     guard.current = true;
     setBusy(true);
     setError("");
@@ -159,7 +161,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
     }
   }
   async function newConversation() {
-    if (guard.current) return;
+    if (welcoming || guard.current) return;
     guard.current = true;
     setBusy(true);
     setError("");
@@ -257,6 +259,20 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
             character={character}
             conversation={conversation}
             onStatus={setCompanion}
+            onWelcome={async (pending, error) => {
+              setWelcoming(pending);
+              setWelcomeError(error || "");
+              if (!pending) {
+                try {
+                  const ms = await api<TimelineItem[]>(
+                    `/conversations/${conversation}/timeline`,
+                  );
+                  setMessages(ms);
+                } catch {
+                  /* Polling retries. */
+                }
+              }
+            }}
           />
           <div className="tags">
             {character.profile.personality.core_traits
@@ -273,7 +289,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
           <label htmlFor="conversation">Conversation history</label>
           <select
             id="conversation"
-            disabled={busy}
+            disabled={busy || welcoming}
             value={conversation}
             onChange={(e) => switchConversation(e.target.value)}
           >
@@ -286,7 +302,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
           </select>
           <button
             className="button full"
-            disabled={busy}
+            disabled={busy || welcoming}
             onClick={newConversation}
           >
             ＋ New conversation
@@ -344,6 +360,11 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               ),
             )}
+            {welcoming && (
+              <div className="thinking" role="status">
+                {character.profile.name} is replying…
+              </div>
+            )}
             {busy && (
               <div className="thinking" role="status">
                 Waiting for a reply…
@@ -351,11 +372,37 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
             )}
             <div ref={bottom} />
           </div>
+          {welcomeError && (
+            <div className="error" role="alert">
+              {welcomeError}
+              <button
+                onClick={async () => {
+                  setWelcoming(true);
+                  setWelcomeError("");
+                  try {
+                    await api("/companion/welcome", { refresh: true });
+                    setMessages(
+                      await api(`/conversations/${conversation}/timeline`),
+                    );
+                  } catch (e) {
+                    setWelcomeError((e as Error).message);
+                  } finally {
+                    setWelcoming(false);
+                  }
+                }}
+              >
+                Retry reply
+              </button>
+            </div>
+          )}
           {error && (
             <div className="error" role="alert">
               {error}
               {retry && (
-                <button disabled={busy} onClick={() => send(retry)}>
+                <button
+                  disabled={busy || welcoming}
+                  onClick={() => send(retry)}
+                >
                   Retry this message
                 </button>
               )}
@@ -367,7 +414,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
               className="button activity-invite"
               aria-haspopup="dialog"
               aria-expanded={inviting}
-              disabled={busy}
+              disabled={busy || welcoming}
               onClick={() => {
                 setExtras(false);
                 setInviting(true);
@@ -394,7 +441,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
                 className="button extras-toggle"
                 aria-label="Open activities"
                 aria-expanded={extras}
-                disabled={busy}
+                disabled={busy || welcoming}
                 onClick={() => setExtras(!extras)}
               >
                 ＋
@@ -447,7 +494,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
               <span>Not sent: {retry.content.slice(0, 80)}</span>
               <button
                 className="text-button"
-                disabled={busy}
+                disabled={busy || welcoming}
                 onClick={() => {
                   setRetry(null);
                   setError("");

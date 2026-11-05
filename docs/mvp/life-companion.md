@@ -1,6 +1,6 @@
 # Life Companion v0.3 — local setup
 
-Life Companion adds a visible **Bring into My Life** entry to the character chat sidebar. One selected character and conversation can receive occasional Google Calendar check-ins. Ordinary chats and independent stories continue to work.
+Life Companion adds a visible **Connect calendar** entry to the character chat sidebar. One selected character and conversation can receive occasional Google Calendar check-ins. Ordinary chats and independent stories continue to work.
 
 This remains a local prototype, not a production identity or notification service. Keep both servers bound to `127.0.0.1`, run one backend worker, and open `http://127.0.0.1:3000`. Do not mix `localhost` and `127.0.0.1`: the session cookie and OAuth return must use the same hostname. Keep your existing model settings.
 
@@ -62,11 +62,11 @@ npm.cmd ci
 npm.cmd run dev
 ```
 
-Open a character's chat, choose **Bring into My Life**, create/sign in to the local account, and choose **Connect Google Calendar**. Read and grant the Google consent. You return to the original conversation. A successful authorization is only marked ready after a successful calendar sync. The character's introduction is generated through your configured text provider and saved as an assistant-only message; AI failures never fall back to fabricated success.
+Open a character's chat, choose **Connect calendar**, create/sign in to the local account, and choose **Connect Google Calendar**. Read and grant the Google consent. You return to the original conversation. A successful authorization is only marked ready after a successful calendar sync. You return directly to chat, where the character starts replying immediately rather than waiting for the periodic worker. The short introduction uses the current character voice and, when appropriate, one upcoming non-private plan to ask a natural question. It is generated through your configured text provider and saved as an assistant-only message. AI failures show a retry in chat, never a fabricated success; retries and refreshes do not create a second introduction.
 
 Keep the backend running for scheduling. Closing the browser does not stop the local worker, but stopping the backend does. The worker checks due work every 30 seconds; the active chat checks for saved messages every five seconds. This version has no browser push or operating-system notifications. No notification permission is requested, and in-app support works independently.
 
-Use **Manage Life Companion** to pause, change quiet hours, sync, switch the active character/conversation, or disconnect. Switching keeps the calendar connection and past messages; subsequent check-ins use the new character's current profile. Deleting the active character clears its active selection and prevents delivery without deleting the Google connection.
+Use **My calendar** to pause, sync, switch the active character/conversation, or disconnect. Quiet hours are under **Preferences**; privacy details are collapsed by default. Switching keeps the calendar connection and past messages; subsequent check-ins use the new character's current profile. Deleting the active character clears its active selection and prevents delivery without deleting the Google connection.
 
 ## Behavior and privacy
 
@@ -87,7 +87,7 @@ Use **Manage Life Companion** to pause, change quiet hours, sync, switch the act
 - **redirect_uri_mismatch:** match the backend callback above exactly, including port, hostname and path.
 - **Invalid state / returned without signing in:** use the same browser and hostname throughout; start authorization again. State expires after ten minutes and can be used only once.
 - **Access denied:** add your Google account to test users, enable Calendar API, grant the calendar read scope, and check organization policy.
-- **Sync needs attention:** retry after 30 seconds or reconnect. No proactive work runs against a failed/revoked connection.
+- **Sync needs attention:** retry or reconnect. No proactive work runs against a failed/revoked connection.
 - **No check-ins:** ensure the character and this conversation are active, text AI credentials work, the backend is running, and the event qualifies. Quiet hours, already discussed events, daily caps, private events, expired reminders and cancellations can all intentionally suppress delivery. Sync alone is not a delivered message.
 
 ## Validation boundary

@@ -15,30 +15,29 @@ export type CompanionStatus = {
   quiet_end: string;
   last_sync: string | null;
 };
-type Event = {
-  title: string;
-  starts_at: string;
-  all_day: boolean;
-  category: string;
-};
+type Plan = { title: string; starts_at: string; all_day: boolean };
 export function LifeCompanion({
   character,
   conversation,
   onStatus,
+  onWelcome,
 }: {
   character: Character;
   conversation: string;
   onStatus: (status: CompanionStatus | null) => void;
+  onWelcome: (pending: boolean, error?: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [account, setAccount] = useState<AccountState | null>(null);
   const [status, setStatus] = useState<CompanionStatus | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<Plan[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const welcomeGuard = useRef(false);
+  const pendingWelcome = useRef(false);
   const body = {
     character_id: character.id,
     conversation_id: conversation,
@@ -51,39 +50,64 @@ export function LifeCompanion({
       const s = await api<CompanionStatus>("/companion/settings");
       setStatus(s);
       onStatus(s);
-      if (s.connected) setEvents(await api<Event[]>("/companion/upcoming"));
-      else setEvents([]);
-    } else {
-      setStatus(null);
-      onStatus(null);
+      if (s.connected && open)
+        setEvents(await api<Plan[]>("/companion/upcoming"));
+      return s;
+    }
+    setStatus(null);
+    onStatus(null);
+    return null;
+  }
+  async function greet(refresh = false) {
+    if (welcomeGuard.current) return;
+    welcomeGuard.current = true;
+    onWelcome(true);
+    try {
+      await api("/companion/welcome", { refresh });
+      onWelcome(false);
+    } catch (e) {
+      onWelcome(false, (e as Error).message);
+    } finally {
+      welcomeGuard.current = false;
     }
   }
   useEffect(() => {
     let active = true;
-    const load = async () => {
-      if (active)
-        try {
-          await refresh();
-        } catch {
-          /* background status does not interrupt chat */
-        }
-    };
-    void load();
-    const timer = setInterval(() => void load(), 15000);
     const result = new URLSearchParams(location.search).get("calendar");
+    if (result === "connected") pendingWelcome.current = true;
     if (result) {
-      setOpen(true);
+      setOpen(result !== "connected");
       setNotice(
-        result === "connected"
-          ? "Calendar connected and synchronized. Your companion will introduce the new connection shortly."
-          : result === "cancelled"
-            ? "Connection cancelled. Your calendar was not changed."
-            : "Calendar connection needs attention. Retry or reconnect below.",
+        result === "cancelled"
+          ? "Connection cancelled."
+          : result === "connected"
+            ? ""
+            : "Couldn't connect. Please try again.",
       );
       const url = new URL(location.href);
       url.searchParams.delete("calendar");
       history.replaceState(null, "", url);
     }
+    const load = async () => {
+      try {
+        const s = await refresh();
+        if (
+          active &&
+          pendingWelcome.current &&
+          s?.status === "ready" &&
+          s.conversation_id === conversation
+        ) {
+          pendingWelcome.current = false;
+          await greet();
+        }
+      } catch {
+        /* Chat remains usable during a status failure. */
+      }
+    };
+    void load();
+    const timer = setInterval(() => {
+      if (active) void refresh().catch(() => {});
+    }, 15000);
     return () => {
       active = false;
       clearInterval(timer);
@@ -91,13 +115,20 @@ export function LifeCompanion({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [character.id, conversation]);
   useEffect(() => {
-    if (open) dialog.current?.showModal();
-    else dialog.current?.close();
+    if (open) {
+      dialog.current?.showModal();
+      void refresh().catch((e) => setError(e.message));
+    } else dialog.current?.close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
   const activeHere =
     !!status?.enabled &&
     status.character_id === character.id &&
     status.conversation_id === conversation;
+  function close() {
+    setOpen(false);
+    requestAnimationFrame(() => trigger.current?.focus());
+  }
   async function action(fn: () => Promise<unknown>) {
     setBusy(true);
     setError("");
@@ -111,34 +142,26 @@ export function LifeCompanion({
       setBusy(false);
     }
   }
-  function close() {
-    setOpen(false);
-    requestAnimationFrame(() => trigger.current?.focus());
-  }
   return (
     <>
       <section className="life-companion-entry" aria-label="Life Companion">
-        <strong>
-          Life Companion <span aria-hidden="true">✧</span>
-        </strong>
-        <p>
-          Let this character understand your daily plans and be there for
-          important moments.
-        </p>
         <button
           ref={trigger}
           className="button companion-cta"
           aria-haspopup="dialog"
           onClick={() => setOpen(true)}
         >
-          {activeHere ? "Manage Life Companion" : "Bring into My Life"}
+          <span aria-hidden="true">✧ </span>
+          {activeHere
+            ? "My calendar"
+            : status?.connected
+              ? "Use my calendar"
+              : "Connect calendar"}
           <span aria-hidden="true"> →</span>
         </button>
         {activeHere && (
           <span className="small">
-            {status?.status === "ready"
-              ? "Calendar connected · In-app support"
-              : "Calendar needs attention"}
+            {status?.status === "ready" ? "Connected" : "Needs attention"}
           </span>
         )}
       </section>
@@ -151,7 +174,7 @@ export function LifeCompanion({
         }}
       >
         <div className="companion-heading">
-          <span className="eyebrow">LIFE COMPANION</span>
+          <h2>{status?.connected ? "Your calendar" : "Share your calendar"}</h2>
           <button
             className="button"
             aria-label="Close Life Companion"
@@ -160,74 +183,64 @@ export function LifeCompanion({
             ×
           </button>
         </div>
-        <h2>Let {character.profile.name} become part of your everyday life.</h2>
-        <p>
-          Gentle encouragement before important plans, and a little space to
-          talk afterward. Always optional.
-        </p>
-        <div className="privacy-note">
-          <strong>Your calendar, your choice.</strong>
-          <p>
-            Read-only access to your primary Google Calendar. EchoLoom cannot
-            create, edit or delete events. Private and sensitive events are
-            excluded from AI context. Relevant event titles and times may be
-            sent to your configured AI provider.
-          </p>
-          <p>
-            Up to two unprompted check-ins per day. Quiet hours apply in your
-            timezone. Calendar plans are never treated as proof of what
-            happened.
-          </p>
-        </div>
+        {!status?.connected && (
+          <p>{character.profile.name} can be there for your important plans.</p>
+        )}
         {notice && (
-          <p role="status" className="notice">
+          <p className="notice" role="status">
             {notice}
           </p>
         )}
         {error && (
-          <p role="alert" className="error">
+          <p className="error" role="alert">
             {error}
           </p>
         )}
-        {!account?.authenticated ? (
+        {!account ? (
+          <p role="status">Loading…</p>
+        ) : !account.authenticated ? (
           <AccountForm
-            setup={!!account?.setup_required}
+            compact
+            setup={account.setup_required}
             onDone={() => void refresh()}
           />
         ) : (
           <>
             {status?.connected ? (
               <>
-                <p>
-                  <strong>{status.email || "Google Calendar"}</strong>
-                  <br />
-                  <span className="small">
-                    {status.status === "ready"
-                      ? "Connected · Read-only"
-                      : "Sync needs attention"}
-                    {status.last_sync &&
-                      ` · Last sync ${new Date(status.last_sync).toLocaleString("en-US")}`}
-                  </span>
+                <p className="small muted">
+                  {status.email} ·{" "}
+                  {status.status === "ready" ? "Connected" : "Needs attention"}
                 </p>
                 {!activeHere && (
-                  <p>
-                    {status.enabled
-                      ? "Another character or conversation is currently active. Switching preserves its messages and moves future check-ins here."
-                      : "Choose this conversation for future check-ins."}
-                  </p>
+                  <button
+                    className="button primary full"
+                    disabled={busy}
+                    onClick={() =>
+                      void action(async () => {
+                        await api("/companion/activate", body);
+                        close();
+                        await greet();
+                      })
+                    }
+                  >
+                    Make {character.profile.name} my companion
+                  </button>
                 )}
                 <div className="companion-actions">
-                  {!activeHere && (
-                    <button
-                      className="button primary"
-                      disabled={busy}
-                      onClick={() =>
-                        void action(() => api("/companion/activate", body))
-                      }
-                    >
-                      Make {character.profile.name} my companion
-                    </button>
-                  )}
+                  <button
+                    className="button"
+                    disabled={busy}
+                    onClick={() =>
+                      void action(async () => {
+                        await api("/integrations/google-calendar/sync", {});
+                        close();
+                        if (activeHere) await greet(true);
+                      })
+                    }
+                  >
+                    {busy ? "Syncing…" : "Sync now"}
+                  </button>
                   {activeHere && (
                     <button
                       className="button"
@@ -239,82 +252,67 @@ export function LifeCompanion({
                       Pause check-ins
                     </button>
                   )}
-                  <button
-                    className="button"
-                    disabled={busy}
-                    onClick={() =>
-                      void action(() =>
-                        api("/integrations/google-calendar/sync", {}),
-                      )
-                    }
-                  >
-                    Sync now
-                  </button>
                 </div>
-                <label>
-                  Quiet hours start
-                  <input
-                    type="time"
-                    value={status.quiet_start}
-                    disabled={busy}
-                    onChange={(e) =>
-                      void action(() =>
-                        api(
-                          "/companion/settings",
-                          { quiet_start: e.target.value },
-                          "PATCH",
-                        ),
-                      )
-                    }
-                  />
-                </label>
-                <label>
-                  Quiet hours end
-                  <input
-                    type="time"
-                    value={status.quiet_end}
-                    disabled={busy}
-                    onChange={(e) =>
-                      void action(() =>
-                        api(
-                          "/companion/settings",
-                          { quiet_end: e.target.value },
-                          "PATCH",
-                        ),
-                      )
-                    }
-                  />
-                </label>
-                <p className="small muted">
-                  Timezone: {status.timezone}. Browser notifications are not
-                  enabled in this local version. In-app messages still work.
-                </p>
                 <details>
-                  <summary>Upcoming plans ({events.length})</summary>
+                  <summary>Preferences</summary>
+                  <label>
+                    Quiet hours start
+                    <input
+                      type="time"
+                      value={status.quiet_start}
+                      disabled={busy}
+                      onChange={(e) =>
+                        void action(() =>
+                          api(
+                            "/companion/settings",
+                            { quiet_start: e.target.value },
+                            "PATCH",
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label>
+                    Quiet hours end
+                    <input
+                      type="time"
+                      value={status.quiet_end}
+                      disabled={busy}
+                      onChange={(e) =>
+                        void action(() =>
+                          api(
+                            "/companion/settings",
+                            { quiet_end: e.target.value },
+                            "PATCH",
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <p className="small muted">
+                    {status.timezone} · Up to two check-ins a day, in this chat.
+                  </p>
+                </details>
+                <details>
+                  <summary>Upcoming plans</summary>
                   <ul className="upcoming-plans">
-                    {events.map((event, index) => (
-                      <li key={index}>
-                        <strong>{event.title}</strong>
+                    {events.map((plan, i) => (
+                      <li key={i}>
+                        <strong>{plan.title}</strong>
                         <br />
-                        <span>
-                          {event.all_day ? "All day · " : ""}
-                          {new Date(event.starts_at).toLocaleString("en-US", {
-                            timeZone: status.timezone,
-                          })}
-                        </span>
+                        {new Date(plan.starts_at).toLocaleString("en-US", {
+                          timeZone: status.timezone,
+                        })}
                       </li>
                     ))}
                   </ul>
-                  {!events.length && (
-                    <p>No upcoming events in the next seven days.</p>
-                  )}
+                  {events.length === 0 && <p>No upcoming plans.</p>}
                 </details>
                 <details>
                   <summary>Disconnect Google Calendar</summary>
-                  <p>
-                    This removes stored credentials, calendar snapshots, derived
-                    calendar memories and pending check-ins. Previously sent
-                    chat messages remain in your history.
+                  <p className="small">
+                    Clears calendar data and stops check-ins. Your chat history
+                    stays.
                   </p>
                   <button
                     className="button"
@@ -326,22 +324,15 @@ export function LifeCompanion({
                           undefined,
                           "DELETE",
                         );
-                        setNotice(
-                          "Disconnected. Your existing chat history is preserved.",
-                        );
+                        setNotice("Calendar disconnected.");
                       })
                     }
                   >
-                    Disconnect and clear calendar data
+                    Disconnect calendar
                   </button>
                 </details>
               </>
-            ) : (
-              <p>
-                One character can be your active companion at a time. Connecting
-                does not change your calendar.
-              </p>
-            )}
+            ) : null}
             {(!status?.connected || status.status !== "ready") && (
               <button
                 className="button primary full"
@@ -356,23 +347,38 @@ export function LifeCompanion({
                   })
                 }
               >
-                {status?.connected
-                  ? "Reconnect Google Calendar"
-                  : "Connect Google Calendar"}
+                {busy
+                  ? "Connecting…"
+                  : status?.connected
+                    ? "Reconnect Google Calendar"
+                    : "Connect Google Calendar"}
               </button>
             )}
             {!status?.configured && (
-              <p className="notice">
-                Google Calendar is not configured yet. Follow
-                docs/mvp/life-companion.md to add your Google OAuth credentials
-                to the backend .env file, then restart the backend.
+              <p className="small muted">
+                Calendar setup needed.{" "}
+                <a
+                  href="https://github.com/Roxyh-code/Echoloom_V2/blob/main/docs/mvp/life-companion.md"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Setup guide ↗
+                </a>
               </p>
             )}
           </>
         )}
-        <button className="button full" onClick={close}>
-          Not now
-        </button>
+        <p className="small muted companion-privacy-brief">
+          Read-only. Relevant plans are shared with your AI provider.
+        </p>
+        <details className="companion-privacy-details">
+          <summary>Privacy</summary>
+          <p className="small">
+            Private and sensitive events are excluded. EchoLoom cannot change
+            your calendar. You can pause or disconnect anytime; existing chat
+            messages remain.
+          </p>
+        </details>
       </dialog>
     </>
   );

@@ -9,7 +9,9 @@ export type AccountState = {
 export function AccountForm({
   setup,
   onDone,
+  compact = false,
 }: {
+  compact?: boolean;
   setup: boolean;
   onDone: () => void;
 }) {
@@ -38,19 +40,27 @@ export function AccountForm({
         }
       }}
     >
-      <h2>{setup ? "Protect your personal calendar" : "Welcome back"}</h2>
-      <p>
+      <h2>
         {setup
-          ? "Create an account for this local installation. Your existing characters and conversations will belong to this account."
-          : "Sign in to this EchoLoom installation."}
-      </p>
+          ? compact
+            ? "Create your local account"
+            : "Protect your personal calendar"
+          : "Welcome back"}
+      </h2>
+      {!compact && (
+        <p>
+          {setup
+            ? "Create an account for this local installation. Your existing characters and conversations will belong to this account."
+            : "Sign in to this EchoLoom installation."}
+        </p>
+      )}
       <label>
         Local username
         <input
           required
           minLength={3}
           maxLength={80}
-          pattern="[a-zA-Z0-9_.-]+"
+          pattern={"[a-zA-Z0-9_.\\-]+"}
           autoComplete="username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -69,9 +79,9 @@ export function AccountForm({
         />
       </label>
       <p className="small muted">
-        Use a separate password, not your Google password. This is a local
-        prototype account, without email recovery. Keep the app on your own
-        computer.
+        {compact
+          ? "10+ characters. Use a different password from Google."
+          : "Use a separate password, not your Google password. This is a local prototype account, without email recovery. Keep the app on your own computer."}
       </p>
       {error && (
         <p role="alert" className="error">

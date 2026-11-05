@@ -639,3 +639,69 @@ def test_quiet_event_checkins_expire_instead_of_morning_backlog(companion):
             )
         )
         assert tasks and all(t.status == "expired" for t in tasks)
+
+
+def test_welcome_immediate_personal_context_and_idempotent_without_worker(companion):
+    client, service, google, clock, _factory, text = companion
+    register(client)
+    char = character(client)
+    google.items = [event(clock, offset=6 * 24 * 60, title="Exam")]
+    connect(client, char)
+    assert timeline(client, char) == []
+    response = client.post("/api/companion/welcome", json={})
+    assert response.status_code == 200
+    messages = timeline(client, char)
+    assert len(messages) == 1 and "Exam coming up" in messages[0]["content"]
+    import json
+
+    context = text.calls[-1][1]
+    frame = json.loads(context[-1]["content"])
+    assert frame["upcoming_plan"]["title"] == "Exam"
+    assert "ask what subject" in context[0]["content"]
+    assert frame["profile"]["name"] == char["profile"]["name"]
+    assert client.post("/api/companion/welcome", json={}).status_code == 200
+    service.tick()
+    assert len(timeline(client, char)) == 1
+
+    # An explicit sync starts a fresh conversation once per synced snapshot.
+    assert (
+        client.post("/api/companion/welcome", json={"refresh": True}).status_code == 200
+    )
+    assert len(timeline(client, char)) == 2
+    assert json.loads(text.calls[-1][1][-1]["content"])["trigger"] == "calendar_refresh"
+    assert (
+        client.post("/api/companion/welcome", json={"refresh": True}).status_code == 200
+    )
+    assert len(timeline(client, char)) == 2
+
+    google.items.append(event(clock, "new-plan", offset=24 * 60, title="Job interview"))
+    # Explicit sync must fetch new plans even seconds after the first connection.
+    assert client.post("/api/integrations/google-calendar/sync").status_code == 200
+    assert len(client.get("/api/companion/upcoming").json()) == 2
+    assert (
+        client.post("/api/companion/welcome", json={"refresh": True}).status_code == 200
+    )
+    assert len(timeline(client, char)) == 3
+
+
+def test_welcome_no_private_or_cancelled_plan_and_no_fake_success(companion):
+    client, _service, google, clock, _factory, text = companion
+    register(client)
+    char = character(client)
+    google.items = [event(clock, title="Doctor appointment")]
+    connect(client, char)
+    text.fail = True
+    assert client.post("/api/companion/welcome", json={}).status_code == 503
+    assert timeline(client, char) == []
+    text.fail = False
+    clock.value += timedelta(minutes=6)
+    assert client.post("/api/companion/welcome", json={}).status_code == 200
+    import json
+
+    assert json.loads(text.calls[-1][1][-1]["content"])["upcoming_plan"] is None
+    client.delete("/api/integrations/google-calendar/connection")
+    google.items = [event(clock, title="Exam")]
+    connect(client, char)
+    google.items[0]["status"] = "cancelled"
+    assert client.post("/api/companion/welcome", json={}).status_code == 200
+    assert json.loads(text.calls[-1][1][-1]["content"])["upcoming_plan"] is None

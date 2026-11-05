@@ -1618,3 +1618,34 @@ small,
     margin-top: 12px;
   }
 }
+
+.life-companion-entry {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  gap: 0.35rem;
+}
+.life-companion-entry > .small {
+  padding-left: 0.4rem;
+  color: var(--muted);
+}
+.companion-heading h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+.companion-dialog > .companion-privacy-brief {
+  font-size: 0.75rem;
+  margin: 1rem 0 0.25rem;
+}
+.companion-dialog .companion-privacy-details {
+  margin: 0.25rem 0 0;
+  padding: 0.25rem 0;
+  border: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.companion-dialog details label {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.8rem 0;
+}

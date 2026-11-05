@@ -128,6 +128,23 @@ class FakeText:
         self.calls.append(("chat", messages))
         if self.fail:
             raise ProviderError("Simulated provider failure")
+        if messages[0]["content"].startswith("Write one short"):
+            import json
+
+            frame = json.loads(messages[-1]["content"])
+            if frame["trigger"] in ("introduction", "calendar_refresh"):
+                reply = (
+                    "I have a little more context about your everyday life now. I can check in here before important plans."
+                    if frame["trigger"] == "introduction"
+                    else "I have caught up with your updated plans."
+                )
+                if frame.get("upcoming_plan"):
+                    reply += (
+                        " You have "
+                        + frame["upcoming_plan"]["title"]
+                        + " coming up—what would you like me to know about it?"
+                    )
+                return reply
         return "A book about dying stars. Surprisingly cheerful material, isn't it?"
 
 
