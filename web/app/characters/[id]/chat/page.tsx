@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { LifeCompanion, CompanionStatus } from "@/components/life-companion";
 import { use, useEffect, useRef, useState } from "react";
 import { api, Avatar, Character } from "@/components/api";
 import { StoryInvitation } from "@/components/story-invitation";
@@ -28,6 +29,8 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
   const [extras, setExtras] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [past, setPast] = useState(false);
+  const [companion, setCompanion] = useState<CompanionStatus | null>(null);
+  const autoScroll = useRef(true);
   useEffect(() => {
     let active = true;
     Promise.all([
@@ -78,8 +81,36 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
         target.current = null;
       }
-    } else bottom.current?.scrollIntoView({ behavior: "smooth" });
+    } else if (autoScroll.current)
+      bottom.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, busy]);
+  useEffect(() => {
+    if (!companion?.enabled || companion.conversation_id !== conversation)
+      return;
+    let running = false;
+    let active = true;
+    const timer = setInterval(async () => {
+      if (guard.current || running || document.hidden) return;
+      running = true;
+      try {
+        const next = await api<TimelineItem[]>(
+          `/conversations/${conversation}/timeline`,
+        );
+        if (active)
+          setMessages((old) =>
+            JSON.stringify(old) === JSON.stringify(next) ? old : next,
+          );
+      } catch {
+        /* Preserve composer and current history during transient failures. */
+      } finally {
+        running = false;
+      }
+    }, 5000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [companion?.enabled, companion?.conversation_id, conversation]);
   async function send(failed?: { content: string; request_id: string }) {
     if (guard.current || (!failed && !input.trim())) return;
     const body = failed || {
@@ -87,6 +118,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
       request_id: crypto.randomUUID(),
     };
     guard.current = true;
+    autoScroll.current = true;
     setBusy(true);
     setError("");
     setRetry(null);
@@ -221,6 +253,11 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
           <Avatar character={character} large />
           <h1>{character.profile.name}</h1>
           <p>{character.profile.short_description}</p>
+          <LifeCompanion
+            character={character}
+            conversation={conversation}
+            onStatus={setCompanion}
+          />
           <div className="tags">
             {character.profile.personality.core_traits
               .slice(0, 4)
@@ -260,7 +297,15 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
             <span className="presence" />
             Chat with {character.profile.name} <small>AI CHARACTER</small>
           </div>
-          <div className="messages" aria-live="polite">
+          <div
+            className="messages"
+            aria-live="polite"
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              autoScroll.current =
+                el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+            }}
+          >
             {messages.length === 0 && (
               <div className="chat-empty">
                 <span>✧</span>
@@ -276,7 +321,26 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
                   <small>
                     {m.role === "user" ? "You" : character.profile.name}
                   </small>
+                  {m.source_type === "calendar_companion" && (
+                    <small className="companion-message-label">
+                      Life Companion · Based on your calendar
+                    </small>
+                  )}
                   <p>{m.content}</p>
+                  {m.source_type === "calendar_companion" && (
+                    <button
+                      className="companion-snooze"
+                      onClick={async () => {
+                        try {
+                          await api("/companion/snooze", {});
+                        } catch (e) {
+                          setError((e as Error).message);
+                        }
+                      }}
+                    >
+                      Pause check-ins for 4 hours
+                    </button>
+                  )}
                 </div>
               ),
             )}

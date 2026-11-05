@@ -149,6 +149,8 @@ class FakeImages:
 def setup(tmp_path):
     settings = Settings(
         _env_file=None,
+        companion_worker_enabled=False,
+        calendar_key_file=tmp_path / "calendar.key",
         database_url=f"sqlite:///{tmp_path / 'test.db'}",
         image_directory=tmp_path / "images",
     )

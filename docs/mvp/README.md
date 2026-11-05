@@ -154,3 +154,7 @@ Real provider acceptance requires credentials: verify explicit character facts, 
 ## Current limits
 
 This is a local single-user prototype bound to loopback, not a public multi-user service. Authentication, authorization, moderation, rate limits, and user isolation need separate work before public deployment. Streaming replies, image background jobs, voice/video, vector memory, production deployment, and advanced evidence reconstruction are deferred. Original research remains in `literature/` and other research documentation.
+
+## Life Companion v0.3
+
+Optional read-only Google Calendar support, local account protection, and persisted in-app check-ins are documented in [Life Companion setup](life-companion.md). Upgrading requires installing the updated lockfile and running `alembic upgrade head`; existing records are preserved. Google OAuth credentials and a real consent flow are required for live calendar use.

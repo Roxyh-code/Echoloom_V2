@@ -22,3 +22,14 @@ class Settings(BaseSettings):
     api_timeout_seconds: float = Field(90, ge=1, le=300)
     story_max_output_tokens: int = Field(3500, ge=1000, le=8000)
     story_max_context_tokens: int = Field(24000, ge=6000, le=64000)
+
+    app_origin: str = "http://127.0.0.1:3000"
+    google_client_id: str = ""
+    google_client_secret: SecretStr = SecretStr("")
+    google_redirect_uri: str = (
+        "http://127.0.0.1:8000/api/integrations/google-calendar/callback"
+    )
+    calendar_key_file: Path = Path("work/secrets/calendar.key")
+    calendar_encryption_key: SecretStr = SecretStr("")
+    companion_worker_enabled: bool = True
+    allow_additional_accounts: bool = False

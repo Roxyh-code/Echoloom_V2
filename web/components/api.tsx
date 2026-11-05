@@ -27,6 +27,7 @@ export type Portrait = {
   created_at: string;
 };
 export type Message = {
+  source_type?: "user_chat" | "calendar_companion";
   id: string;
   role: "user" | "assistant";
   content: string;
@@ -66,6 +67,8 @@ export async function api<T>(
     cache: "no-store",
   });
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined")
+      window.dispatchEvent(new Event("echoloom-auth-required"));
     const data = await response.json().catch(() => null);
     const detail = data?.detail;
     throw new Error(

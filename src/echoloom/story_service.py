@@ -180,6 +180,7 @@ def register_story_routes(app, factory, locks, settings):
                 "kind": "text",
                 "id": m.id,
                 "role": m.role,
+                "source_type": m.source_type,
                 "content": m.content,
                 "request_id": m.request_id,
                 "profile_version": m.profile_version,

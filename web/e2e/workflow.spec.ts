@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 
+test.beforeEach(async ({ request }) => {
+  await request.post("http://127.0.0.1:8001/__test/reset");
+});
+
 test("create → edit → chat → refine → portrait edit → restore → return", async ({
   page,
 }) => {

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from PIL import Image, UnidentifiedImageError
 from sqlalchemy import func, inspect, select, update
@@ -77,6 +77,8 @@ def create_app(
     text_provider=None,
     image_provider=None,
     engine=None,
+    calendar_provider=None,
+    clock=None,
 ):
     settings = settings or Settings()
     if settings.database_url.startswith("sqlite:///./"):
@@ -173,6 +175,9 @@ def create_app(
             content={
                 "database_ready": ready,
                 "story_database_ready": inspect(engine).has_table("stories"),
+                "companion_database_ready": inspect(engine).has_table(
+                    "calendar_connections"
+                ),
                 "text_configured": bool(
                     settings.llm_api_key.get_secret_value()
                     and settings.llm_model
@@ -192,34 +197,48 @@ def create_app(
         )
 
     @app.get("/api/characters")
-    def list_characters(db: DbSession):
+    def list_characters(request: Request, db: DbSession):
         return [
             serialize(db, c)
-            for c in db.scalars(select(Character).order_by(Character.updated_at.desc()))
+            for c in db.scalars(
+                select(Character)
+                .where(Character.owner_id == request.state.user_id)
+                .order_by(Character.updated_at.desc())
+            )
         ]
 
     @app.post("/api/characters/generate", status_code=201)
-    def generate(body: GenerateInput, db: DbSession):
+    def generate(body: GenerateInput, request: Request, db: DbSession):
         if len(body.description) > settings.max_profile_input_chars:
             raise HTTPException(
                 422,
                 f"The description must not exceed {settings.max_profile_input_chars} characters.",
             )
         profile = Profile.model_validate(app.state.text.generate(body.description))
-        c = Character(original_description=body.description)
-        db.add(c)
-        db.flush()
-        db.add(
-            ProfileRevision(
-                character_id=c.id,
-                version=1,
-                profile_json=profile.model_dump(),
-                change_summary="Create Character",
+        from .companion_models import Account
+
+        with locks.hold("account-bootstrap"):
+            if request.state.user_id is None and db.scalar(select(Account.id).limit(1)):
+                raise HTTPException(
+                    401,
+                    "A local account was created. Please sign in before saving a character.",
+                )
+            c = Character(
+                original_description=body.description, owner_id=request.state.user_id
             )
-        )
-        db.add(Conversation(character_id=c.id))
-        db.commit()
-        return serialize(db, c)
+            db.add(c)
+            db.flush()
+            db.add(
+                ProfileRevision(
+                    character_id=c.id,
+                    version=1,
+                    profile_json=profile.model_dump(),
+                    change_summary="Create Character",
+                )
+            )
+            db.add(Conversation(character_id=c.id))
+            db.commit()
+            return serialize(db, c)
 
     @app.get("/api/characters/{cid}")
     def get_character(cid: UUID, db: DbSession):
@@ -377,6 +396,7 @@ def create_app(
             {
                 "id": m.id,
                 "role": m.role,
+                "source_type": m.source_type,
                 "content": m.content,
                 "profile_version": m.profile_version,
                 "request_id": m.request_id,
@@ -425,13 +445,18 @@ def create_app(
                     .limit(100)
                 )
             )
-            history = [{"role": m.role, "content": m.content} for m in reversed(recent)]
+            history = [
+                {"role": m.role, "content": m.content, "source_type": m.source_type}
+                for m in reversed(recent)
+            ]
+            frame = app.state.companion.chat_frame(db, c, body.content)
             try:
                 context = chat_context(
                     Profile.model_validate(revision(db, c).profile_json),
                     history,
                     body.content,
                     settings,
+                    calendar_frame=frame,
                 )
             except ValueError as exc:
                 raise HTTPException(422, str(exc)) from None
@@ -454,6 +479,7 @@ def create_app(
                         created_at=now(),
                     )
                 )
+            app.state.companion.remember(db, c, body.content, frame)
             conv.updated_at = c.updated_at = now()
             db.commit()
             return messages(db, conv.id)
@@ -632,6 +658,11 @@ def create_app(
     from .story_service import register_story_routes
 
     register_story_routes(app, factory, locks, settings)
+    from .companion_service import register_companion
+    from .local_accounts import register_accounts
+
+    register_accounts(app, factory, locks, settings)
+    register_companion(app, factory, locks, settings, calendar_provider, clock)
     return app
 
 

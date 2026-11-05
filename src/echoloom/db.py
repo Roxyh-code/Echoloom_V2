@@ -26,6 +26,9 @@ class Base(DeclarativeBase):
 
 
 class Character(Base):
+    owner_id: Mapped[str | None] = mapped_column(
+        ForeignKey("user_accounts.id"), default=None, index=True
+    )
     __tablename__ = "characters"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     original_description: Mapped[str] = mapped_column(Text)
@@ -74,6 +77,14 @@ class Conversation(Base):
 
 
 class Message(Base):
+    trigger_type: Mapped[str | None] = mapped_column(String(30), default=None)
+    source_event_id: Mapped[str | None] = mapped_column(String(36), default=None)
+    source_type: Mapped[str] = mapped_column(
+        default="user_chat", server_default="user_chat"
+    )
+    source_task_id: Mapped[str | None] = mapped_column(
+        String(36), unique=True, index=True, default=None
+    )
     __tablename__ = "messages"
     timeline_order: Mapped[int] = mapped_column(default=0, server_default="0")
     __table_args__ = (UniqueConstraint("conversation_id", "request_id", "role"),)
@@ -229,3 +240,7 @@ def allocate_timeline(session, conversation_id, count=1):
     if end is None:
         raise ValueError("Conversation not found")
     return list(range(end - count + 1, end + 1))
+
+
+# Register companion tables with the shared metadata.
+from . import companion_models  # noqa: F401

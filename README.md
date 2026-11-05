@@ -6,6 +6,8 @@ Create a fictional character, shape their identity, and return to an ongoing con
 
 Start with the **[MVP development and startup guide](docs/mvp/README.md)**. It includes Windows PowerShell and macOS/Linux commands, model configuration, safe updates, and tests. Provider credentials are configured on the server; real AI operations require an API account with available credits and model access.
 
+**Life Companion v0.3:** optional read-only Google Calendar connection, a local account, calendar-aware chat, and persisted in-app check-ins from one selected character. Start with the [Google Calendar setup guide](docs/mvp/life-companion.md). Browser push is not enabled in the local build.
+
 ## Project structure
 
 ```text
@@ -23,7 +25,7 @@ experiments/   Method comparisons and research evaluations
 
 ## Existing records survive updates
 
-Keep `.env`, `work/echoloom.db`, `work/portraits/`, and the same database/storage settings. Pulling code, restarting the application, or refreshing the browser does not delete saved characters, messages, versions, or portraits. Back up data with the application stopped. The current story-mode release requires `alembic upgrade head`; migration 0002 preserves old records while adding story tables and stable mixed-timeline order.
+Keep `.env`, `work/echoloom.db`, `work/portraits/`, `work/secrets/calendar.key`, and the same database/storage settings. Pulling code, restarting the application, or refreshing the browser does not delete saved characters, messages, versions, or portraits. Back up data with the application stopped. Run `alembic upgrade head` after upgrading dependencies. Migration 0002 adds story tables and timeline ordering; migration 0003 adds accounts and calendar support. Both preserve existing records. The first local account claims existing characters and history.
 
 ## Research foundations
 

@@ -51,7 +51,11 @@ CHAT_LANGUAGE_RULE = (
 
 
 def chat_context(
-    profile: Profile, history: list[dict], content: str, settings: Settings
+    profile: Profile,
+    history: list[dict],
+    content: str,
+    settings: Settings,
+    calendar_frame=None,
 ) -> list[dict]:
     system = {
         "role": "system",
@@ -74,16 +78,43 @@ def chat_context(
         raise ValueError(
             "The profile or message exceeds the context budget. Shorten it or increase MAX_CHAT_CONTEXT_TOKENS."
         )
+    calendar = None
+    if calendar_frame:
+        from .calendar_context import CALENDAR_RULE
+
+        calendar = {
+            "role": "system",
+            "content": CALENDAR_RULE + json.dumps(calendar_frame),
+        }
+        used += cost(calendar)
+        if used > budget:
+            raise ValueError("Calendar context exceeds the configured context budget.")
+    groups = []
+    for message in history:
+        clean = {"role": message["role"], "content": message["content"]}
+        if (
+            message["role"] == "assistant"
+            and message.get("source_type", "user_chat") == "user_chat"
+        ):
+            if groups and len(groups[-1]) == 1 and groups[-1][0]["role"] == "user":
+                groups[-1].append(clean)
+            # A truncated ordinary assistant response is not a standalone turn.
+        else:
+            groups.append([clean])
     recent = []
-    # Retain whole turns and a contiguous suffix, never an orphan assistant response.
-    for index in range(len(history) - 2, -1, -2):
-        turn = history[index : index + 2]
-        amount = sum(cost(m) for m in turn)
+    for group in reversed(groups):
+        amount = sum(cost(m) for m in group)
         if used + amount > budget:
             break
-        recent[0:0] = turn
+        recent[0:0] = group
         used += amount
-    return [system, *recent, language, {"role": "user", "content": content}]
+    return [
+        system,
+        *([calendar] if calendar else []),
+        *recent,
+        language,
+        {"role": "user", "content": content},
+    ]
 
 
 class OpenAIText:

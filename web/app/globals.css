@@ -1463,3 +1463,158 @@ small,
     padding-top: 9px;
   }
 }
+
+.account-status {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 0.5rem 2rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.account-status button,
+.companion-snooze {
+  border: 0;
+  background: none;
+  color: var(--purple, #7763ac);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.account-gate {
+  max-width: 540px;
+  min-height: 60vh;
+}
+.account-form {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+.account-form h2,
+.account-form p {
+  margin: 0;
+}
+.account-form label,
+.companion-dialog > label {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+.life-companion-entry {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem;
+  border: 1px solid #d8ccea;
+  background: #f6f1fc;
+  border-radius: 14px;
+  margin: 1rem 0;
+}
+.life-companion-entry > strong {
+  display: flex;
+  justify-content: space-between;
+  color: #65528d;
+}
+.life-companion-entry p {
+  display: block !important;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.companion-cta {
+  background: #7661ac;
+  color: white;
+  font-weight: 650;
+  white-space: normal;
+}
+.companion-dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: 88dvh;
+  overflow-y: auto;
+  border: 1px solid #e0d8eb;
+  border-radius: 22px;
+  padding: 1.5rem;
+  background: #fffdfd;
+  color: #293340;
+}
+.companion-dialog::backdrop {
+  background: #28203580;
+}
+.companion-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.companion-dialog h2 {
+  font-size: 1.65rem;
+}
+.companion-dialog p {
+  line-height: 1.6;
+}
+.privacy-note {
+  background: #f3f0f7;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
+}
+.privacy-note p:last-child {
+  margin-bottom: 0;
+}
+.companion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.companion-dialog details {
+  margin: 1rem 0;
+  padding: 0.8rem 0;
+  border-top: 1px solid #e5e0eb;
+}
+.companion-dialog summary {
+  cursor: pointer;
+}
+.upcoming-plans {
+  padding-left: 1.25rem;
+}
+.upcoming-plans li {
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
+}
+.companion-message-label {
+  display: block;
+  font-size: 0.72rem;
+  color: #7763ac;
+  margin: 0.35rem 0;
+}
+.companion-snooze {
+  display: block;
+  font-size: 0.72rem;
+  padding: 0.4rem 0;
+}
+@media (max-width: 760px) {
+  .chat-profile .life-companion-entry {
+    display: grid;
+    flex: 1 0 100%;
+    width: 100%;
+    margin: 0.5rem 0;
+  }
+  .chat-profile .life-companion-entry p {
+    display: block;
+  }
+  .companion-dialog {
+    padding: 1.1rem;
+  }
+}
+
+@media (min-width: 641px) {
+  .chat-profile {
+    padding-top: 20px;
+  }
+  .chat-profile .avatar.large {
+    height: 110px;
+  }
+  .chat-profile h1 {
+    margin-top: 12px;
+  }
+  .chat-profile .life-companion-entry {
+    margin-top: 12px;
+  }
+}

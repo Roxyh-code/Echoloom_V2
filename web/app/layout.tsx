@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { AccountShell } from "@/components/account-shell";
 export const metadata: Metadata = {
   title: "EchoLoom · Bring characters to life",
   description: "Create, shape and meet your fictional characters.",
@@ -23,7 +24,7 @@ export default function RootLayout({
             </Link>
           </nav>
         </header>
-        {children}
+        <AccountShell>{children}</AccountShell>
         <footer className="site-footer">
           Make room for imagination.
           <span>

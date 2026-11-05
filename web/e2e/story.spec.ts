@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 
+test.beforeEach(async ({ request }) => {
+  await request.post("http://127.0.0.1:8001/__test/reset");
+});
+
 // The configured server is test-only and uses an ephemeral database.
 test.afterEach(async ({ request }) => {
   const characters = await (await request.get("/api/characters")).json();
