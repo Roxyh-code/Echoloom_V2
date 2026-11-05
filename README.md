@@ -1,6 +1,10 @@
 # EchoLoom
 
-Create a fictional character, shape their identity, and return to an ongoing conversation.
+**Your favorite character. By your side.**
+
+An AI character companion for everyday conversations, shared stories, and the plans that matter to you. Create someone familiar, spend time together, and pick up where you left off.
+
+[Watch the narrated walkthrough](demo/README.md) · [Product positioning](docs/product/positioning.md) · [Product roadmap](docs/product/roadmap.md)
 
 **MVP v0.1:** a local character studio using FastAPI, SQLite, and Next.js. It includes structured profiles, editing, persistent chat, AI refinement previews, profile history, portrait generation/editing, and independent image revisions. Interactive activities are now available from the chat composer: the visible **Do something together** button above the chat input. See the [story-mode guide](docs/mvp/story-mode.md). The interface and new generated text use English. Existing character content and conversations remain unchanged.
 
@@ -35,6 +39,6 @@ The original research track remains available: reconstruct fictional characters 
 - [Schema foundations report](literature/output/schema-foundations/report.md)
 - [Field-to-evidence matrix](literature/organization/schema-field-matrix.md)
 - [Research next steps](literature/plans/next-steps.md)
-- [Original roadmap](docs/roadmap.md)
+- [Original research roadmap](docs/roadmap.md)
 
 Research documents and the originally supplied PRD are retained in their source languages. Downloaded papers and extracted full text stay local and are not committed.

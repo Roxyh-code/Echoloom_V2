@@ -1,33 +1,51 @@
-Welcome to Echo Loom. This walkthrough uses sample AI responses and prepared portrait assets.
+Meet Echo Loom: your favorite character, by your side. This demo uses prepared AI responses, portraits, and calendar events.
 
-Start with a few words about someone you would like to meet.
+Start with someone you would love to spend time with. A few details give the character a voice of their own.
 
-A structured profile keeps appearance, personality, and speaking style editable.
+Here is Evelyn. Her personality, appearance, and speaking style stay editable as you get to know her.
 
-Make a small change. The same character identity is preserved.
+Give her a face, too. Generate a portrait, preview it, and choose the version you like.
 
-Generate a portrait from the appearance profile, then preview the result before selecting it.
+Want a different look? Change her hair color, compare the result, and keep the original within reach.
 
-Edit the selected portrait with a simple instruction. The original image stays available.
+Now, just talk. Evelyn brings the same gentle humor into an ordinary rainy-afternoon conversation.
 
-Compare saved versions and switch back at any time, without recreating the character.
+You can take a moment, share a feeling, or simply enjoy a little company.
 
-Chat with the saved character. Their latest profile guides the conversation.
+Ready to do something together? The story and schedule buttons are right beside your conversation.
 
-Ready for a shared scene? The activity button is always visible.
+Set the scene: old friends, a rainy bookshop, and an evening with nowhere else to be.
 
-Describe the scene, your relationship, and anything you want to avoid.
+Let the scene breathe. Read the narration and dialogue a little at a time, at your own pace.
 
-Your invitation becomes a scene card in this conversation.
+You can speak in your own words. Let us ask what has changed since our last visit.
 
-Story mode presents narration, character dialogue, and AI-assisted player lines.
+After a little conversation, the first choice appears. Let us browse the astronomy shelf.
 
-Read at your own pace: step through, play, pause, or show the whole segment.
+That choice opens a new part of the scene. Next, we will look for the old comet guide.
 
-Important decisions are yours. Choose an intention or write your own response.
+And you can change your mind. Instead of searching the shelves, let us turn this into a cozy study session.
 
-The next scene responds to your choice while keeping the character consistent.
+The direction changes, while the character and relationship stay familiar. We are now studying by the window.
 
-Return to chat anytime. The scene card keeps your story ready to continue.
+Want a different tone? Rewrite the latest segment to make the conversation more playful.
 
-Create once. Keep shaping the character — and pick up where you left off.
+There is the same study scene, with a little more mischief. Your choices shape how the evening feels.
+
+When you return to chat, the story stays here as a saved card. You can pick it up again later.
+
+Now, bring a little of everyday life into the conversation. Choose Sync my schedule.
+
+Connect a read-only calendar. This recording uses simulated consent and a sample physics exam, with no real Google account.
+
+The connection starts a conversation right away. Evelyn acknowledges the calendar and asks about the exam next week.
+
+Tell her a little more. The schedule provides a starting point; your own words supply the personal details.
+
+Her reply stays curious and in character. A calendar entry becomes a natural conversation, rather than a generic reminder.
+
+Keep going for another turn. You decide what help you want and when you would like to come back.
+
+A shared story, a familiar voice, and a little support for real plans. That is the companion experience we are building.
+
+Echo Loom. Your favorite character, by your side. Come back for the next conversation, or the next little adventure.
