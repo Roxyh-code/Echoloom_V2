@@ -21,6 +21,8 @@ from .db import (
     Portrait,
     ProfileRevision,
     Proposal,
+    Story,
+    allocate_timeline,
     make_engine,
     now,
     sessions,
@@ -170,6 +172,7 @@ def create_app(
             status_code=200 if ready else 503,
             content={
                 "database_ready": ready,
+                "story_database_ready": inspect(engine).has_table("stories"),
                 "text_configured": bool(
                     settings.llm_api_key.get_secret_value()
                     and settings.llm_model
@@ -382,7 +385,7 @@ def create_app(
             for m in db.scalars(
                 select(Message)
                 .where(Message.conversation_id == str(conv_id))
-                .order_by(Message.created_at, Message.id)
+                .order_by(Message.timeline_order)
             )
         ]
 
@@ -418,7 +421,7 @@ def create_app(
                 db.scalars(
                     select(Message)
                     .where(Message.conversation_id == conv.id)
-                    .order_by(Message.created_at.desc(), Message.id.desc())
+                    .order_by(Message.timeline_order.desc())
                     .limit(100)
                 )
             )
@@ -436,10 +439,14 @@ def create_app(
             if not isinstance(response, str) or not response.strip():
                 raise ProviderError("The model did not return a valid reply.")
             # Both messages commit together. Failed remote calls leave neither a false reply nor a duplicate user turn.
-            for role, content in (("user", body.content), ("assistant", response)):
+            orders = allocate_timeline(db, conv.id, 2)
+            for order, (role, content) in zip(
+                orders, (("user", body.content), ("assistant", response)), strict=True
+            ):
                 db.add(
                     Message(
                         conversation_id=conv.id,
+                        timeline_order=order,
                         request_id=str(body.request_id),
                         role=role,
                         content=content,
@@ -603,6 +610,10 @@ def create_app(
         with locks.hold(str(cid)):
             c = character(db, cid)
             item = portrait(db, cid, image_id)
+            if db.scalar(select(Story.id).where(Story.portrait_id == item.id)):
+                raise HTTPException(
+                    409, "This portrait is used by a saved story and must be preserved."
+                )
             if c.current_image_id == item.id:
                 raise HTTPException(
                     409, "Select another portrait before deleting this image."
@@ -618,6 +629,9 @@ def create_app(
             db.commit()
             (settings.image_directory / item.file_path).unlink(missing_ok=True)
 
+    from .story_service import register_story_routes
+
+    register_story_routes(app, factory, locks, settings)
     return app
 
 

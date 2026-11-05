@@ -24,7 +24,7 @@ export default function Library() {
   async function remove(c: Character) {
     if (
       !confirm(
-        `Delete ${c.profile.name} and all conversations, profiles and images? This cannot be undone.`,
+        `Delete ${c.profile.name} and all conversations, stories, profiles and images? This cannot be undone.`,
       )
     )
       return;

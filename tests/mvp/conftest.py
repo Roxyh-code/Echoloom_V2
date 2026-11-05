@@ -45,6 +45,85 @@ class FakeText:
             explanation="Adjust only the core traits and preserve all other details.",
         )
 
+    def story(self, context):
+        import json
+
+        from echoloom.story_context import validate_story_output
+        from echoloom.story_schemas import StoryOutput
+
+        self.calls.append(("story", context))
+        if self.fail:
+            raise ProviderError("Simulated story failure")
+        frame = json.loads(context[-1]["content"])
+        event = frame["event"]
+        kind = event["kind"]
+        if kind == "start":
+            first = "Rain traces the bookshop window as two old friends meet again."
+            ending = {
+                "type": "decision",
+                "question": "How would you like to respond?",
+                "options": [
+                    {"intent": "Ask what happened"},
+                    {"intent": "Change the subject"},
+                ],
+            }
+        elif kind == "end":
+            first = (
+                "The bookshop lights soften as the conversation comes to a quiet close."
+            )
+            ending = {"type": "ending"}
+        else:
+            first = (
+                "She explains the missing letter."
+                if "Ask what happened" in event.get("content", "")
+                else "She turns to the weather."
+                if "Change the subject" in event.get("content", "")
+                else "She responds to your contribution: "
+                + event.get("content", "The evening continues.")
+            )
+            if event.get("rewrite_instruction"):
+                first = "Revised scene: " + event["rewrite_instruction"]
+            ending = {"type": "continue"}
+        if event.get("rewrite_instruction"):
+            first = "Revised scene: " + event["rewrite_instruction"]
+        output = StoryOutput.model_validate(
+            {
+                "title": "A Rainy Reunion",
+                "blocks": [
+                    {"type": "narration", "speaker": None, "text": first},
+                    {
+                        "type": "action",
+                        "speaker": "character",
+                        "text": "She sets a book on the table.",
+                    },
+                    {
+                        "type": "dialogue",
+                        "speaker": "character",
+                        "text": "It has been a while. Would you like to talk?",
+                    },
+                    {
+                        "type": "dialogue",
+                        "speaker": "player",
+                        "text": "It has been a long time.",
+                    },
+                    {
+                        "type": "action",
+                        "speaker": "player",
+                        "text": "You glance at the window.",
+                    },
+                    {
+                        "type": "narration",
+                        "speaker": None,
+                        "text": "UNREAD_DRAWER: A sealed drawer catches the lamplight.",
+                    },
+                ],
+                "ending": ending,
+                "summary": "The effective scene includes UNREAD_DRAWER.",
+                "confirmed_facts": ["The scene is in a bookshop", "UNREAD_DRAWER"],
+            }
+        )
+        return validate_story_output(output, context)
+
     def chat(self, messages):
         self.calls.append(("chat", messages))
         if self.fail:

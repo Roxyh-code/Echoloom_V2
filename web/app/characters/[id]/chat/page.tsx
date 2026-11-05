@@ -1,7 +1,10 @@
 "use client";
 import Link from "next/link";
 import { use, useEffect, useRef, useState } from "react";
-import { api, Avatar, Character, Message } from "@/components/api";
+import { api, Avatar, Character } from "@/components/api";
+import { StoryInvitation } from "@/components/story-invitation";
+import { StoryCard } from "@/components/story-card";
+import { TimelineItem, StoryCardData } from "@/components/story-api";
 export default function Chat({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const base = `/characters/${id}`;
@@ -10,7 +13,7 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
     { id: string; created_at: string }[]
   >([]);
   const [conversation, setConversation] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<TimelineItem[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -21,6 +24,10 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
   } | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const guard = useRef(false);
+  const target = useRef<string | null>(null);
+  const [extras, setExtras] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [past, setPast] = useState(false);
   useEffect(() => {
     let active = true;
     Promise.all([
@@ -29,14 +36,29 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
     ])
       .then(async ([c, cs]) => {
         if (!active) return;
+        const query = new URLSearchParams(window.location.search);
+        const requested = query.get("conversation");
         const conv = sessionStorage.getItem(`echoloom-conversation-${id}`);
-        const cid = cs.some((x) => x.id === conv) ? conv! : c.conversation_id;
-        const ms = await api<Message[]>(`/conversations/${cid}/messages`);
+        const cid = cs.some((x) => x.id === requested)
+          ? requested!
+          : cs.some((x) => x.id === conv)
+            ? conv!
+            : c.conversation_id;
+        const ms = await api<TimelineItem[]>(`/conversations/${cid}/timeline`);
+        const event = query.get("event");
+        if (
+          requested === cid &&
+          event &&
+          ms.some((item) => item.kind === "story_card" && item.id === event)
+        )
+          target.current = `story-event-${event}`;
         if (active) {
           setCharacter(c);
           setConversations(cs);
           setConversation(cid);
           setMessages(ms);
+          if (requested === cid && query.get("invite") === "1")
+            setInviting(true);
         }
       })
       .catch((e) => {
@@ -50,7 +72,13 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
     };
   }, [base, id]);
   useEffect(() => {
-    bottom.current?.scrollIntoView({ behavior: "smooth" });
+    if (target.current) {
+      const element = document.getElementById(target.current);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.current = null;
+      }
+    } else bottom.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, busy]);
   async function send(failed?: { content: string; request_id: string }) {
     if (guard.current || (!failed && !input.trim())) return;
@@ -63,11 +91,10 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
     setError("");
     setRetry(null);
     try {
-      const ms = await api<Message[]>(
-        `/conversations/${conversation}/messages`,
-        body,
+      await api(`/conversations/${conversation}/messages`, body);
+      setMessages(
+        await api<TimelineItem[]>(`/conversations/${conversation}/timeline`),
       );
-      setMessages(ms);
       setInput("");
       setCharacter(await api(base));
     } catch (e) {
@@ -84,7 +111,10 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
     setBusy(true);
     setError("");
     try {
-      setMessages(await api(`/conversations/${cid}/messages`));
+      setMessages(await api(`/conversations/${cid}/timeline`));
+      setInviting(false);
+      setPast(false);
+      setExtras(false);
       setConversation(cid);
       sessionStorage.setItem(`echoloom-conversation-${id}`, cid);
       setRetry(null);
@@ -108,6 +138,9 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
       );
       setConversations((old) => [...old, c]);
       setConversation(c.id);
+      setInviting(false);
+      setPast(false);
+      setExtras(false);
       setMessages([]);
       setRetry(null);
       setInput("");
@@ -138,6 +171,43 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
     );
   return (
     <main className="chat-container">
+      {inviting && (
+        <StoryInvitation
+          key={conversation}
+          character={character}
+          conversation={conversation}
+          onClose={() => setInviting(false)}
+          onCreated={async (card: StoryCardData) => {
+            setInviting(false);
+            target.current = `story-event-${card.id}`;
+            try {
+              setMessages(await api(`/conversations/${conversation}/timeline`));
+            } catch (e) {
+              setError((e as Error).message);
+            }
+          }}
+        />
+      )}
+      {past && (
+        <section className="panel past-activities">
+          <div className="dialog-header">
+            <h2>Past activities</h2>
+            <button className="button" onClick={() => setPast(false)}>
+              Close
+            </button>
+          </div>
+          <p className="muted small">Activities in this conversation only.</p>
+          {messages
+            .filter((m): m is StoryCardData => m.kind === "story_card")
+            .map((card) => (
+              <StoryCard key={card.id} card={card} />
+            ))}
+          {!messages.some((m) => m.kind === "story_card") && (
+            <p>No activities yet. Send an invitation to begin.</p>
+          )}
+        </section>
+      )}
+
       <div className="chat-top">
         <Link className="back-link" href="/characters">
           ← My Characters
@@ -198,14 +268,18 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
                 <p>Ask what is on their mind, or introduce yourself.</p>
               </div>
             )}
-            {messages.map((m) => (
-              <div key={m.id} className={`message ${m.role}`}>
-                <small>
-                  {m.role === "user" ? "You" : character.profile.name}
-                </small>
-                <p>{m.content}</p>
-              </div>
-            ))}
+            {messages.map((m) =>
+              m.kind === "story_card" ? (
+                <StoryCard key={m.id} card={m} />
+              ) : (
+                <div key={m.id} className={`message ${m.role}`}>
+                  <small>
+                    {m.role === "user" ? "You" : character.profile.name}
+                  </small>
+                  <p>{m.content}</p>
+                </div>
+              ),
+            )}
             {busy && (
               <div className="thinking" role="status">
                 Waiting for a reply…
@@ -230,6 +304,40 @@ export default function Chat({ params }: { params: Promise<{ id: string }> }) {
               void send();
             }}
           >
+            <div className="chat-extras">
+              <button
+                type="button"
+                className="button extras-toggle"
+                aria-label="Open activities"
+                aria-expanded={extras}
+                disabled={busy}
+                onClick={() => setExtras(!extras)}
+              >
+                ＋
+              </button>
+              {extras && (
+                <div className="extras-menu">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExtras(false);
+                      setInviting(true);
+                    }}
+                  >
+                    Do something together
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExtras(false);
+                      setPast(!past);
+                    }}
+                  >
+                    Past activities
+                  </button>
+                </div>
+              )}
+            </div>
             <label className="sr-only" htmlFor="message">
               Message
             </label>

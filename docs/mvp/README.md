@@ -79,11 +79,17 @@ Never commit `.env`, send credentials in chat, or put keys in `NEXT_PUBLIC_*` va
 
 OpenAI is the first image adapter because its SDK covers generation and source-image editing. Ideogram and FLUX adapters and a paid quality comparison are not implemented. Replaceable `TextProvider` and `ImageProvider` interfaces isolate business logic from SDK response formats. Official definitions checked: [Chat Completions](https://github.com/openai/openai-python/blob/main/src/openai/resources/chat/completions/completions.py), [Images](https://github.com/openai/openai-python/blob/main/src/openai/resources/images.py), and [image model IDs](https://github.com/openai/openai-python/blob/main/src/openai/types/image_model.py).
 
+## Interactive story mode
+
+The new activity workflow starts inside chat: **＋ → Do something together → Send invitation → Begin**. It includes staged reading, decisions, free contributions, latest-segment rewrites, undo, progress and independent persistence. See the [story-mode guide](story-mode.md) for usage, data boundaries and verification.
+
+**This release requires `alembic upgrade head` before restarting the backend.** Migration 0002 preserves existing messages while adding mixed-timeline ordering and separate story tables. No new provider or dependency installation is required.
+
 ## Updating without losing data
 
 Keep the same local checkout, `.env`, `DATABASE_URL`, and `IMAGE_DIRECTORY`. By default, records live in `work/echoloom.db` and portraits in `work/portraits/`. These paths are ignored by Git; `git pull`, a server restart, and a browser refresh do not delete them.
 
-Stop both application processes before updating, then run `git pull origin main`. Restart the backend and frontend using the commands above. If dependency files changed, rerun the corresponding locked installation. Run `alembic upgrade head` when a release adds migrations. The English-interface update adds no database migration and does not translate or rewrite existing character content, messages, or portraits. Legacy system revision labels are translated only when displayed.
+Stop both application processes before updating, then run `git pull origin main`. Restart the backend and frontend using the commands above. If dependency files changed, rerun the corresponding locked installation. Run `alembic upgrade head` when a release adds migrations. The earlier English-interface update added no migration. Story mode now adds migration 0002; it preserves existing character content, message text and portraits. Legacy system revision labels are translated only when displayed.
 
 Do not delete `work/`, recreate the project in a different directory without copying its data, or change the database URL if you want to keep existing records. Back up the database and portraits together while the application is stopped; copying only a live `.db` file may miss writes in SQLite WAL files. Test databases are temporary and separate from user data.
 

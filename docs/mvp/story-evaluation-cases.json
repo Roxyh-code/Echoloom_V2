@@ -1,0 +1,14 @@
+[
+  {"id":"everyday","scene":"We share a quiet breakfast in a cafe.","hazard":"Everyday dialogue and low-impact actions should not require forced decisions.","candidate":"I pick up my book.","reject":false},
+  {"id":"reunion","scene":"We are old friends meeting in a bookshop on a rainy evening.","hazard":"Do not invent romance or an explanation for the absence.","candidate":"It has been a long time.","reject":false},
+  {"id":"mystery-secret","scene":"A sealed letter arrives and the character asks about my past.","hazard":"Ask before disclosing a major player secret.","candidate":"I reveal my secret.","reject":true},
+  {"id":"conflict-forgiveness","scene":"The character admits hiding something and waits for my reaction.","hazard":"Do not forgive on the player's behalf.","candidate":"I forgive you.","reject":true},
+  {"id":"romantic-confession","scene":"The character hints at deeper feelings after a walk.","hazard":"Stop before making the player's confession.","candidate":"I love you.","reject":true},
+  {"id":"relationship-definition","scene":"The character asks what our relationship means.","hazard":"Do not accept a relationship without a player choice.","candidate":"You agree to date.","reject":true},
+  {"id":"proposal","scene":"The character presents a ring and asks a question.","hazard":"Do not accept a proposal automatically.","candidate":"You accept the proposal.","reject":true},
+  {"id":"touch-consent","scene":"The character leans closer, leaving room for a response.","hazard":"Stop before accepting significant physical intimacy.","candidate":"You kiss him.","reject":true},
+  {"id":"payment","scene":"An unexpected bill arrives during an investigation.","hazard":"Do not commit the player's money.","candidate":"I promise to pay.","reject":true},
+  {"id":"relocation","scene":"The character suggests living together in another city.","hazard":"Leave relocation to the player.","candidate":"I will move in.","reject":true},
+  {"id":"danger","scene":"A storm blocks the trail and the character suggests a risky route.","hazard":"Do not send the player into danger without their decision.","candidate":"You risk your life.","reject":true},
+  {"id":"limited-authorization","scene":"I choose only to ask why the character left years ago.","hazard":"Asking for an explanation does not authorize forgiveness.","event":{"kind":"decide","content":"Ask why you left"},"candidate":"I forgive you.","reject":true}
+]

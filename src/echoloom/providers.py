@@ -12,11 +12,17 @@ from pydantic import ValidationError
 
 from .config import Settings
 from .schemas import PATCH_PATHS, Profile, Refinement
+from .story_context import validate_story_output
+from .story_schemas import StoryOutput
 
 logger = logging.getLogger("echoloom.ai")
 
 
 class ProviderError(Exception):
+    pass
+
+
+class InvalidModelOutput(ProviderError):
     pass
 
 
@@ -28,6 +34,7 @@ class TextProvider(Protocol):
     def generate(self, description: str) -> Profile: ...
     def refine(self, profile: Profile, instruction: str) -> Refinement: ...
     def chat(self, messages: list[dict]) -> str: ...
+    def story(self, context: list[dict]) -> StoryOutput: ...
 
 
 class ImageProvider(Protocol):
@@ -105,12 +112,20 @@ class OpenAIText:
                 response = client.chat.completions.create(
                     model=s.llm_model,
                     messages=messages,
-                    max_completion_tokens=s.max_output_tokens,
+                    max_completion_tokens=s.story_max_output_tokens
+                    if schema is StoryOutput
+                    else s.max_output_tokens,
                     **({"response_format": {"type": "json_object"}} if schema else {}),
                 )
             choice = response.choices[0]
-            if choice.finish_reason != "stop" or not choice.message.content:
+            if choice.finish_reason == "content_filter" or getattr(
+                choice.message, "refusal", None
+            ):
                 raise ProviderError(
+                    "The model declined this request. Review it against the provider's content rules before retrying."
+                )
+            if choice.finish_reason != "stop" or not choice.message.content:
+                raise InvalidModelOutput(
                     "The model returned an incomplete response. Retry or check the output budget."
                 )
             result = (
@@ -128,14 +143,47 @@ class OpenAIText:
                 response.usage.total_tokens if response.usage else None,
             )
             return result
-        except (OpenAIError, ValidationError, IndexError, ValueError) as exc:
+        except (ValidationError, IndexError, ValueError) as exc:
+            logger.warning(
+                "provider=openai kind=text success=false error_type=%s",
+                type(exc).__name__,
+            )
+            raise InvalidModelOutput(
+                "The model returned invalid structured output."
+            ) from None
+        except OpenAIError as exc:
             logger.warning(
                 "provider=openai kind=text success=false error_type=%s",
                 type(exc).__name__,
             )
             raise ProviderError(
-                "The model request failed or returned an invalid format. Retry and check the server model configuration."
+                "The model request failed. Check the server model configuration and API access."
             ) from None
+
+    def story(self, context):
+        # Format, language and agency repairs share a SINGLE extra call. SDK network
+        # retries remain separate and bounded; never repair raw network failures.
+        correction = None
+        for attempt in range(2):
+            try:
+                messages = (
+                    context
+                    if correction is None
+                    else [*context, {"role": "system", "content": correction}]
+                )
+                result = self._request(messages, StoryOutput)
+                return validate_story_output(result, context)
+            except (InvalidModelOutput, ValueError) as exc:
+                if attempt:
+                    raise ProviderError(
+                        "The story output failed validation after one correction. Existing content was kept; retry explicitly."
+                    ) from None
+                correction = "Correct the JSON schema, English language and player-agency boundaries. Stop BEFORE unapproved major player actions. Return a complete valid story object."
+                logger.warning(
+                    "provider=openai kind=story validation_failed=true error_type=%s correction_attempt=1",
+                    type(exc).__name__,
+                )
+        raise ProviderError("Story generation failed.")
 
     def generate(self, description):
         return self._request(

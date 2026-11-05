@@ -20,3 +20,5 @@ class Settings(BaseSettings):
     max_image_bytes: int = Field(10 * 1024 * 1024, ge=1024, le=25 * 1024 * 1024)
     image_requests_per_hour: int = Field(6, ge=1, le=100)
     api_timeout_seconds: float = Field(90, ge=1, le=300)
+    story_max_output_tokens: int = Field(3500, ge=1000, le=8000)
+    story_max_context_tokens: int = Field(24000, ge=6000, le=64000)

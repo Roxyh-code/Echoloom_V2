@@ -64,6 +64,7 @@ class Proposal(Base):
 
 class Conversation(Base):
     __tablename__ = "conversations"
+    next_timeline_order: Mapped[int] = mapped_column(default=0, server_default="0")
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     character_id: Mapped[str] = mapped_column(
         ForeignKey("characters.id", ondelete="CASCADE"), index=True
@@ -74,6 +75,7 @@ class Conversation(Base):
 
 class Message(Base):
     __tablename__ = "messages"
+    timeline_order: Mapped[int] = mapped_column(default=0, server_default="0")
     __table_args__ = (UniqueConstraint("conversation_id", "request_id", "role"),)
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     conversation_id: Mapped[str] = mapped_column(
@@ -130,3 +132,100 @@ def make_engine(url: str):
 
 def sessions(engine):
     return sessionmaker(engine, expire_on_commit=False)
+
+
+class Story(Base):
+    __tablename__ = "stories"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    character_id: Mapped[str] = mapped_column(
+        ForeignKey("characters.id", ondelete="CASCADE"), index=True
+    )
+    origin_conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("conversations.id", ondelete="CASCADE"), index=True
+    )
+    creation_request_id: Mapped[str] = mapped_column(String(36))
+    title: Mapped[str] = mapped_column(String(160))
+    snapshot_profile_json: Mapped[dict] = mapped_column(JSON)
+    profile_version: Mapped[int]
+    portrait_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    player_name: Mapped[str] = mapped_column(String(100))
+    setup: Mapped[dict] = mapped_column(JSON)
+    language: Mapped[str] = mapped_column(String(10), default="en")
+    status: Mapped[str] = mapped_column(String(30), default="ready")
+    stable_status: Mapped[str] = mapped_column(String(30), default="ready")
+    revision: Mapped[int] = mapped_column(default=0)
+    active_segment_id: Mapped[str | None] = mapped_column(String(36), default=None)
+    reading_segment_id: Mapped[str | None] = mapped_column(String(36), default=None)
+    last_revealed_block_id: Mapped[str | None] = mapped_column(String(36), default=None)
+    last_error: Mapped[str | None] = mapped_column(Text, default=None)
+    created_at: Mapped[str] = mapped_column(default=now)
+    updated_at: Mapped[str] = mapped_column(default=now)
+
+
+class StorySegment(Base):
+    __tablename__ = "story_segments"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    story_id: Mapped[str] = mapped_column(
+        ForeignKey("stories.id", ondelete="CASCADE"), index=True
+    )
+    parent_segment_id: Mapped[str | None] = mapped_column(String(36))
+    revision: Mapped[int]
+    input_event: Mapped[dict] = mapped_column(JSON)
+    blocks: Mapped[list] = mapped_column(JSON)
+    ending: Mapped[dict] = mapped_column(JSON)
+    summary: Mapped[str] = mapped_column(Text)
+    confirmed_facts: Mapped[list] = mapped_column(JSON)
+    created_at: Mapped[str] = mapped_column(default=now)
+
+
+class StoryRequest(Base):
+    __tablename__ = "story_requests"
+    __table_args__ = (UniqueConstraint("story_id", "request_id"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    story_id: Mapped[str] = mapped_column(
+        ForeignKey("stories.id", ondelete="CASCADE"), index=True
+    )
+    request_id: Mapped[str] = mapped_column(String(36))
+    expected_revision: Mapped[int]
+    operation: Mapped[str] = mapped_column(String(20))
+    payload: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(20))
+    result_segment_id: Mapped[str | None] = mapped_column(String(36), default=None)
+    result_json: Mapped[dict | None] = mapped_column(JSON, default=None)
+    created_at: Mapped[str] = mapped_column(default=now)
+
+
+class ChatEvent(Base):
+    __tablename__ = "chat_events"
+    __table_args__ = (
+        UniqueConstraint("conversation_id", "creation_request_id"),
+        UniqueConstraint("conversation_id", "timeline_order"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("conversations.id", ondelete="CASCADE"), index=True
+    )
+    story_id: Mapped[str | None] = mapped_column(
+        ForeignKey("stories.id", ondelete="SET NULL"), index=True
+    )
+    creation_request_id: Mapped[str] = mapped_column(String(36))
+    creation_payload: Mapped[dict] = mapped_column(JSON)
+    kind: Mapped[str] = mapped_column(String(20), default="story_card")
+    fallback_title: Mapped[str] = mapped_column(String(160))
+    preview: Mapped[str] = mapped_column(Text)
+    timeline_order: Mapped[int]
+    created_at: Mapped[str] = mapped_column(default=now)
+
+
+def allocate_timeline(session, conversation_id, count=1):
+    from sqlalchemy import update
+
+    end = session.scalar(
+        update(Conversation)
+        .where(Conversation.id == conversation_id)
+        .values(next_timeline_order=Conversation.next_timeline_order + count)
+        .returning(Conversation.next_timeline_order)
+    )
+    if end is None:
+        raise ValueError("Conversation not found")
+    return list(range(end - count + 1, end + 1))

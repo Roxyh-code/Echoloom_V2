@@ -2,7 +2,7 @@
 
 Create a fictional character, shape their identity, and return to an ongoing conversation.
 
-**MVP v0.1:** a local character studio using FastAPI, SQLite, and Next.js. It includes structured profiles, editing, persistent chat, AI refinement previews, profile history, portrait generation/editing, and independent image revisions. The interface and new generated text use English. Existing character content and conversations remain unchanged.
+**MVP v0.1:** a local character studio using FastAPI, SQLite, and Next.js. It includes structured profiles, editing, persistent chat, AI refinement previews, profile history, portrait generation/editing, and independent image revisions. Interactive activities are now available from the chat composer: **＋ → Do something together**. See the [story-mode guide](docs/mvp/story-mode.md). The interface and new generated text use English. Existing character content and conversations remain unchanged.
 
 Start with the **[MVP development and startup guide](docs/mvp/README.md)**. It includes Windows PowerShell and macOS/Linux commands, model configuration, safe updates, and tests. Provider credentials are configured on the server; real AI operations require an API account with available credits and model access.
 
@@ -23,7 +23,7 @@ experiments/   Method comparisons and research evaluations
 
 ## Existing records survive updates
 
-Keep `.env`, `work/echoloom.db`, `work/portraits/`, and the same database/storage settings. Pulling code, restarting the application, or refreshing the browser does not delete saved characters, messages, versions, or portraits. Back up data with the application stopped. The English-interface update does not require a database migration.
+Keep `.env`, `work/echoloom.db`, `work/portraits/`, and the same database/storage settings. Pulling code, restarting the application, or refreshing the browser does not delete saved characters, messages, versions, or portraits. Back up data with the application stopped. The current story-mode release requires `alembic upgrade head`; migration 0002 preserves old records while adding story tables and stable mixed-timeline order.
 
 ## Research foundations
 
