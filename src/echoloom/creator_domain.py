@@ -6,7 +6,12 @@ from datetime import UTC, datetime
 
 from fastapi import HTTPException
 
-from .creator_schemas import CreatorBlock, CreatorDocument, CreatorOutput
+from .creator_schemas import (
+    CreatorBlock,
+    CreatorDocument,
+    CreatorOutput,
+    resolve_creator_speakers,
+)
 from .db import uid
 from .providers import ProviderUnavailable
 from .schemas import Profile
@@ -237,6 +242,8 @@ def generate_context(doc, line, event, settings):
     )
     frame = {
         "mode": doc["mode"],
+        "speaker_ids": [m["id"] for m in doc["casts"][line["cast_id"]]],
+        "speaker_rule": "Use the exact cast id for dialogue/action; narration uses null. Never use a name as speaker. In play mode never write player blocks.",
         "premise": doc["premise"],
         "cast": doc["casts"][line["cast_id"]],
         "scene": doc["scenes"][event["scene_id"]]
@@ -473,6 +480,12 @@ def apply_action(doc, body, generate, cast_refresh=None):
                 },
             )
         if op != "edit":
+            try:
+                out = resolve_creator_speakers(out, d["casts"][line["cast_id"]])
+            except ValueError:
+                raise HTTPException(
+                    502, "The model used an unknown speaker. No changes were saved."
+                ) from None
             for block in out.blocks:
                 block.source = "demo" if d["demo"] else "ai"
         if op == "edit":

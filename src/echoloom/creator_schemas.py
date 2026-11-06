@@ -267,3 +267,30 @@ class CreatorDocument(Model):
 class CreatorImport(Model):
     request_id: UUID
     document: CreatorDocument
+
+
+def resolve_creator_speakers(output, cast):
+    """Resolve exact, unambiguous names only; never guess an unknown identity."""
+    result = CreatorOutput.model_validate(output).model_copy(deep=True)
+    allowed = {member["id"] for member in cast}
+    aliases = {}
+    for member in cast:
+        aliases.setdefault(member["profile"]["name"].strip().casefold(), set()).add(
+            member["id"]
+        )
+    for block in result.blocks:
+        if block.type == "narration":
+            if block.speaker is None or block.speaker.casefold() in (
+                "narrator",
+                "narration",
+            ):
+                block.speaker = None
+                continue
+            raise ValueError("Narration must have speaker null.")
+        if block.speaker in allowed:
+            continue
+        matches = aliases.get((block.speaker or "").strip().casefold(), set())
+        if len(matches) != 1:
+            raise ValueError("Unknown or ambiguous speaker. Use an exact cast ID.")
+        block.speaker = next(iter(matches))
+    return result

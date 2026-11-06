@@ -258,3 +258,111 @@ def test_english_reply_requires_no_corrective_call(monkeypatch):
         == "I am doing well, thank you."
     )
     assert len(calls) == 1
+
+
+def creator_context(mode="direct", same_names=False):
+    import json
+
+    return [
+        {
+            "role": "user",
+            "content": json.dumps(
+                {
+                    "mode": mode,
+                    "cast": [
+                        {"id": "character-uuid", "profile": {"name": "秦彻"}},
+                        {
+                            "id": "player" if mode == "play" else "other-uuid",
+                            "profile": {"name": "秦彻" if same_names else "Alex"},
+                        },
+                    ],
+                }
+            ),
+        }
+    ]
+
+
+def creator_reply(speaker, text="I was hoping you would come back.", kind="dialogue"):
+    from echoloom.creator_schemas import CreatorOutput
+
+    return CreatorOutput(blocks=[{"type": kind, "speaker": speaker, "text": text}])
+
+
+def test_creator_exact_names_and_narrator_resolve_without_extra_call(monkeypatch):
+    from echoloom.creator_schemas import CreatorOutput
+
+    calls = []
+    output = CreatorOutput(
+        blocks=[
+            {"type": "narration", "speaker": "Narrator", "text": "Rain falls."},
+            {
+                "type": "dialogue",
+                "speaker": "秦彻",
+                "text": "I was hoping you would come back.",
+            },
+        ]
+    )
+
+    def request(self, messages, schema):
+        calls.append(messages)
+        return output
+
+    monkeypatch.setattr(OpenAIText, "_request", request)
+    result = OpenAIText(Settings(_env_file=None)).creator(creator_context("play"))
+    assert [b.speaker for b in result.blocks] == [None, "character-uuid"]
+    assert output.blocks[1].speaker == "秦彻"
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize(
+    "speaker,mode,same_names",
+    [
+        ("stranger", "direct", False),
+        ("Alex", "play", False),
+        ("秦彻", "direct", True),
+        (None, "direct", False),
+    ],
+)
+def test_creator_repairs_unknown_ambiguous_or_player_speaker_once(
+    monkeypatch, speaker, mode, same_names
+):
+    calls = []
+    replies = iter([creator_reply(speaker), creator_reply("character-uuid")])
+
+    def request(self, messages, schema):
+        calls.append(messages)
+        return next(replies)
+
+    monkeypatch.setattr(OpenAIText, "_request", request)
+    original = creator_context(mode, same_names)
+    result = OpenAIText(Settings(_env_file=None)).creator(original)
+    assert result.blocks[0].speaker == "character-uuid"
+    assert len(calls) == 2 and len(original) == 1
+    assert calls[1][-1]["role"] == "system"
+    assert "character-uuid" in calls[1][-1]["content"]
+
+
+def test_creator_repeated_invalid_speaker_and_network_failure_are_bounded(monkeypatch):
+    from echoloom.providers import InvalidModelOutput, ProviderError
+
+    calls = []
+
+    def invalid(self, messages, schema):
+        calls.append(messages)
+        return creator_reply("stranger")
+
+    monkeypatch.setattr(OpenAIText, "_request", invalid)
+    provider = OpenAIText(Settings(_env_file=None))
+    with pytest.raises(InvalidModelOutput, match="draft is safe"):
+        provider.creator(creator_context())
+    assert len(calls) == 2
+    calls.clear()
+
+    def network(self, messages, schema):
+        calls.append(messages)
+        raise ProviderError("Network unavailable")
+
+    monkeypatch.setattr(OpenAIText, "_request", network)
+    with pytest.raises(ProviderError, match="Network unavailable"):
+        provider.creator(creator_context())
+    assert len(calls) == 1

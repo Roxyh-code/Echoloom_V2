@@ -11,7 +11,7 @@ from openai import APIStatusError, OpenAI, OpenAIError
 from pydantic import ValidationError
 
 from .config import Settings
-from .creator_schemas import CreatorOutput
+from .creator_schemas import CreatorOutput, resolve_creator_speakers
 from .schemas import PATCH_PATHS, Profile, Refinement
 from .story_context import validate_story_output
 from .story_schemas import StoryOutput
@@ -262,22 +262,50 @@ class OpenAIText:
         )
 
     def creator(self, context):
-        output = self._request(context, CreatorOutput)
-        names = []
-        try:
-            names = [
-                m["profile"]["name"] for m in json.loads(context[-1]["content"])["cast"]
-            ]
-        except (KeyError, ValueError, TypeError):
-            pass
-        text = " ".join(b.text for b in output.blocks)
-        for name in names:
-            text = text.replace(name, "")
-        if re.search(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]", text):
-            raise ProviderError(
-                "The model did not return an English scene. Your previous draft is safe."
-            )
-        return output
+        frame = json.loads(context[-1]["content"])
+        cast = frame["cast"]
+        names = [m["profile"]["name"] for m in cast]
+        messages = context
+        for attempt in range(2):
+            try:
+                output = resolve_creator_speakers(
+                    self._request(messages, CreatorOutput), cast
+                )
+                if frame["mode"] == "play" and any(
+                    b.speaker == "player" for b in output.blocks
+                ):
+                    raise ValueError("Do not write the player's dialogue or actions.")
+                text = " ".join(b.text for b in output.blocks)
+                for name in names:
+                    text = text.replace(name, "")
+                if re.search(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]", text):
+                    raise ValueError(
+                        "Write the scene in English, preserving cast names."
+                    )
+                return output
+            except (ValueError, InvalidModelOutput):
+                if attempt:
+                    raise InvalidModelOutput(
+                        "The model could not match the scene to this cast. Your draft is safe; try again."
+                    ) from None
+                # One format/agency correction only. Network errors are not retried here,
+                # and no invalid generated text is copied into the correction prompt.
+                logger.warning(
+                    "provider=openai kind=creator validation_failed correction_attempt=1"
+                )
+                speakers = [
+                    m["id"]
+                    for m in cast
+                    if not (frame["mode"] == "play" and m["id"] == "player")
+                ]
+                messages = context + [
+                    {
+                        "role": "system",
+                        "content": "Regenerate one English scene as valid JSON. For dialogue/actions, speaker must be one of these exact IDs: "
+                        + json.dumps(speakers)
+                        + ". Narration speaker must be null. Do not use character names as IDs, add a speaker, or write the player's role. Keep the original author direction.",
+                    }
+                ]
 
     def chat(self, messages):
         reply = self._request(messages)
