@@ -123,7 +123,7 @@ test("English mobile rehearsal → takeover → event → branch → save result
   expect(errors).toEqual([]);
 });
 
-test("quick creation has no portrait dependency, setup autosaves, 320px layout", async ({
+test("in-scene creation includes portraits, preserves cast and setup at 320px", async ({
   page,
   request,
 }) => {
@@ -142,10 +142,23 @@ test("quick creation has no portrait dependency, setup autosaves, 320px layout",
       .filter({ hasText: /Create/ })
       .first()
       .click();
+    await page.getByLabel("Describe your character").fill(description);
+    await page
+      .getByRole("button", { name: /^Create character/ })
+      .last()
+      .click();
+    await expect(page.getByAltText("Portrait of Evelyn")).toBeVisible();
+    await page
+      .getByRole("button", { name: "Edit character", exact: true })
+      .click();
     await panel.getByLabel("Name", { exact: true }).fill(name);
-    await panel.getByLabel("Character description").fill(description);
-    await panel.getByRole("button", { name: /Create & add/ }).click();
-    await expect(panel).not.toBeVisible();
+    await panel
+      .getByRole("button", { name: "Save character", exact: true })
+      .click();
+    await page.getByRole("button", { name: /Use in this scene/ }).click();
+    await expect(
+      page.getByRole("heading", { name: /Who is in/ }),
+    ).toBeVisible();
   }
   await page.getByRole("button", { name: /Next: set the scene/ }).click();
   await page
@@ -171,7 +184,7 @@ test("quick creation has no portrait dependency, setup autosaves, 320px layout",
   ).toBeTruthy();
   const cc = await (await request.get("/api/rehearsal/characters")).json();
   expect(cc).toHaveLength(2);
-  expect(cc.every((c: any) => !c.current_image_id)).toBeTruthy();
+  expect(cc.every((c: any) => !!c.current_image_id)).toBeTruthy();
 });
 
 test("permission denial never falls back to cached scene text", async ({
@@ -201,7 +214,9 @@ test("permission denial never falls back to cached scene text", async ({
     }),
   );
   await page.reload();
-  await expect(page.locator(".rh-alert[role=alert]")).toContainText("Scene not found.");
+  await expect(page.locator(".rh-alert[role=alert]")).toContainText(
+    "Scene not found.",
+  );
   await expect(
     page.getByText("A private scene with a confidential premise.", {
       exact: true,

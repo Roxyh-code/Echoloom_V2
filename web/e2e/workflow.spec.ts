@@ -9,7 +9,7 @@ test("create → edit → chat → refine → portrait edit → restore → retu
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/characters");
+  await page.goto("/companion");
   await expect(
     page.getByRole("heading", {
       name: "Your favorite character. By your side.",
@@ -107,7 +107,7 @@ test("create → edit → chat → refine → portrait edit → restore → retu
   await page.getByLabel("Message", { exact: true }).fill("Let's keep talking");
   await page.getByRole("button", { name: "Send ↑" }).click();
   await expect(page.locator(".message.assistant")).toHaveCount(2);
-  await page.goto("/characters");
+  await page.goto("/companion");
   await expect(page.getByRole("heading", { name: "Vera" })).toBeVisible();
   await page.getByRole("link", { name: "Continue chat" }).click();
   await expect(

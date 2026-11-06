@@ -11,14 +11,14 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
     <>
       {!creator && (
         <header className="site-header">
-          <Link href="/characters" className="brand">
+          <Link href="/companion" className="brand">
             <span className="brand-mark">e</span> EchoLoom
             <span className="badge">companion</span>
           </Link>
           <nav>
             <Link href="/rehearsal">Rehearsal studio ↗</Link>
-            <Link href="/characters">My Characters</Link>
-            <Link href="/characters/new" className="nav-create">
+            <Link href="/companion">My Characters</Link>
+            <Link href="/companion/new" className="nav-create">
               ＋ Create Character
             </Link>
           </nav>

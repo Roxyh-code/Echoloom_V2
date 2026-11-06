@@ -55,9 +55,15 @@ if __name__ == "__main__":
             with engine.begin() as connection:
                 for table in reversed(Base.metadata.sorted_tables):
                     connection.execute(delete(table))
+            app.state.images.fail = False
             clock.value = Clock()()
             google.items = [event(clock, offset=60)]
             return {"reset": True}
+
+        @app.post("/__test/image-failure/{failed}")
+        def image_failure(failed: bool):
+            app.state.images.fail = failed
+            return {"image_failure": failed}
 
         @app.post("/__test/advance/{minutes}")
         def advance(minutes: int):

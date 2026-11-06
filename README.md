@@ -4,7 +4,7 @@
 
 A mobile scene rehearsal studio for fiction creators. Choose two characters, describe a situation, and watch a short performance. Give a direction, introduce an event, take over a role, or try a different version. Save the scene you believe in and rehearse what comes next.
 
-**New default entrance:** `http://127.0.0.1:3000/rehearsal` (the root URL opens it too). Starry indigo theatre, champagne controls, serif headings, English by default. Existing characters and private data are preserved; portraits are optional for quick creation.
+**New default entrance:** `http://127.0.0.1:3000/rehearsal` (the root URL opens it too). Starry indigo theatre, champagne controls, serif headings, English by default. Existing characters and private data are preserved; describing a new character automatically creates both their profile and portrait in the same mobile interface.
 
 - **[Windows update and rehearsal walkthrough](docs/product/scene-rehearsal.md)** — stop both services, back up `work`, pull, run migration **0005**, restart.
 - [User-provided rehearsal PRD](docs/product/scene-rehearsal-prd.md) · [Current positioning and next steps](docs/product/README.md)
@@ -12,7 +12,7 @@ A mobile scene rehearsal studio for fiction creators. Choose two characters, des
 
 Try **The station reunion · Demo** without model keys. It is clearly labeled and uses prepared performances; saving, versions, exports and source-linked next scenes really persist. Custom rehearsals use your server's text model. Actual model quality, costs and physical-phone behavior still need separate validation.
 
-The previous Creator remains at `/creator`, and the companion at `/characters`: saved chats, portraits, **Do something together** stories and optional Google Calendar. [Previous Creator guide](docs/product/creator-mvp.md) · [Companion demo](demo/README.md) · [Calendar setup](docs/mvp/life-companion.md). No old work is silently converted or deleted.
+The previous Creator remains at `/creator`, and the companion archive at `/companion`: saved chats, portraits, **Do something together** stories and optional Google Calendar. [Previous Creator guide](docs/product/creator-mvp.md) · [Companion demo](demo/README.md) · [Calendar setup](docs/mvp/life-companion.md). `/characters` and `/characters/new` now open the unified mobile character studio. No old work is silently converted or deleted.
 
 ## Project structure
 

@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { MobileCharacterStudio } from "./mobile-character-studio";
 import { useEffect, useRef, useState } from "react";
 import {
   Actor,
@@ -23,9 +23,8 @@ import {
   RehearsalError,
 } from "./rehearsal-api";
 
-type Page = "list" | "cast" | "setup" | "stage" | "review";
+type Page = "list" | "cast" | "setup" | "stage" | "review" | "characters";
 type Panel =
-  | "quick"
   | "actor"
   | "intervene"
   | "direction"
@@ -289,8 +288,9 @@ export function RehearsalApp() {
   const [inputType, setInputType] = useState<"dialogue" | "action">("dialogue");
   const [font, setFont] = useState(17);
   const [unread, setUnread] = useState(false);
-  const [quick, setQuick] = useState({ name: "", description: "" });
-  const [quickId, setQuickId] = useState("");
+  const [characterPicking, setCharacterPicking] = useState(false);
+  const [characterCreate, setCharacterCreate] = useState(false);
+  const [characterMode, setCharacterMode] = useState("library");
   const [exportFormat, setExportFormat] = useState("txt");
   const [exportNames, setExportNames] = useState(true);
   const [exportTitle, setExportTitle] = useState(true);
@@ -320,6 +320,34 @@ export function RehearsalApp() {
     setScene(s);
     setScenes((old) => [s, ...old.filter((x) => x.id !== s.id)]);
     localPut("scene:" + s.id, s);
+  }
+  function openCharacters(create = false, pick = false) {
+    setCharacterPicking(pick);
+    setCharacterCreate(create);
+    setCharacterMode(create ? "create" : "library");
+    setPanel(null);
+    setError("");
+    setNotice("");
+    setPage("characters");
+    const q = new URLSearchParams({ view: "characters" });
+    if (create) q.set("create", "1");
+    if (pick && current.current) {
+      q.set("scene", current.current.id);
+      q.set("pick", "1");
+    }
+    history.pushState(null, "", "/rehearsal?" + q);
+  }
+  async function rehearseWith(c: Character) {
+    const s = await rehearsal<Scene>("/scenes", {
+      operation_id: operation(),
+      character_ids: [c.id],
+      setup: { ...blankSetup, language: lang },
+    });
+    accept(s);
+    setCast([c.id, ""]);
+    setForm(s.document.setup);
+    setSearch("");
+    navigate("cast", s.id);
   }
   function navigate(p: Page, sid?: string) {
     setPage(p);
@@ -444,8 +472,6 @@ export function RehearsalApp() {
   useEffect(() => {
     setLang(localGet("language", "en"));
     setFont(localGet("font", 17));
-    setQuick(localGet("quick", { name: "", description: "" }));
-    setQuickId(localGet("quick-id", "") || operation());
     setOnline(navigator.onLine);
     const connection = () => setOnline(navigator.onLine);
     window.addEventListener("online", connection);
@@ -456,12 +482,13 @@ export function RehearsalApp() {
         await refresh();
         setLang(localGet("language", "en"));
         setFont(localGet("font", 17));
-        setQuick(localGet("quick", { name: "", description: "" }));
-        setQuickId(localGet("quick-id", "") || operation());
         const q = new URLSearchParams(location.search);
+        setCharacterPicking(q.get("pick") === "1");
+        setCharacterCreate(q.get("create") === "1");
         const sid = q.get("scene");
         if (sid) await loadScene(sid, (q.get("view") as Page) || "stage");
-        else if (active) setPage("list");
+        else if (active)
+          setPage(q.get("view") === "characters" ? "characters" : "list");
       } catch (e) {
         const denied =
           e instanceof RehearsalError && [401, 403, 404].includes(e.status);
@@ -475,12 +502,14 @@ export function RehearsalApp() {
     void load();
     const back = () => {
       const q = new URLSearchParams(location.search);
+      setCharacterPicking(q.get("pick") === "1");
+      setCharacterCreate(q.get("create") === "1");
       if (q.get("scene"))
         void loadScene(
           q.get("scene")!,
           (q.get("view") as Page) || "stage",
         ).catch(report);
-      else setPage("list");
+      else setPage(q.get("view") === "characters" ? "characters" : "list");
     };
     window.addEventListener("popstate", back);
     return () => {
@@ -857,7 +886,6 @@ export function RehearsalApp() {
     }, 1000);
   }
   const titles: Record<NonNullable<Panel>, string> = {
-    quick: tr("Create a character", "快速创建角色"),
     actor: actor?.name || tr("Character", "角色"),
     intervene: tr("How would you like to step in?", "你想怎样改变这一场？"),
     direction: tr("Give a direction", "给一句导演指令"),
@@ -944,54 +972,58 @@ export function RehearsalApp() {
       className={"rehearsal-app rh-" + page}
       style={{ "--rh-reading": font + "px" } as React.CSSProperties}
     >
-      <header className="rh-top">
-        <button
-          className="rh-icon"
-          aria-label={page === "list" ? "Studio settings" : "Back"}
-          onClick={() => (page === "list" ? setPanel("more") : back())}
-        >
-          {page === "list" ? <Glyph name="star" /> : "‹"}
-        </button>
-        <div>
-          {page === "list" ? (
-            <>
-              <span className="rh-brand">EchoLoom</span>
-              <small>THE REHEARSAL STUDIO</small>
-            </>
-          ) : (
-            <>
-              <span className="rh-top-title">
-                {page === "cast"
-                  ? tr("Choose your cast", "选择角色")
-                  : page === "setup"
-                    ? tr("Set the scene", "设置开场")
-                    : doc?.title}
-              </span>
-              <small>
-                {page === "cast" ? (
-                  "01 / 02"
-                ) : page === "setup" ? (
-                  "02 / 02"
-                ) : (
-                  <button
-                    className="rh-version-link"
-                    onClick={() => setPanel("versions")}
-                  >
-                    {tr("Version", "版本")} {version?.label} <span>⌄</span>
-                  </button>
-                )}
-              </small>
-            </>
-          )}
-        </div>
-        <button
-          className="rh-icon"
-          aria-label="More options"
-          onClick={() => setPanel("more")}
-        >
-          ···
-        </button>
-      </header>
+      {page !== "characters" && (
+        <>
+          <header className="rh-top">
+            <button
+              className="rh-icon"
+              aria-label={page === "list" ? "Studio settings" : "Back"}
+              onClick={() => (page === "list" ? setPanel("more") : back())}
+            >
+              {page === "list" ? <Glyph name="star" /> : "‹"}
+            </button>
+            <div>
+              {page === "list" ? (
+                <>
+                  <span className="rh-brand">EchoLoom</span>
+                  <small>THE REHEARSAL STUDIO</small>
+                </>
+              ) : (
+                <>
+                  <span className="rh-top-title">
+                    {page === "cast"
+                      ? tr("Choose your cast", "选择角色")
+                      : page === "setup"
+                        ? tr("Set the scene", "设置开场")
+                        : doc?.title}
+                  </span>
+                  <small>
+                    {page === "cast" ? (
+                      "01 / 02"
+                    ) : page === "setup" ? (
+                      "02 / 02"
+                    ) : (
+                      <button
+                        className="rh-version-link"
+                        onClick={() => setPanel("versions")}
+                      >
+                        {tr("Version", "版本")} {version?.label} <span>⌄</span>
+                      </button>
+                    )}
+                  </small>
+                </>
+              )}
+            </div>
+            <button
+              className="rh-icon"
+              aria-label="More options"
+              onClick={() => setPanel("more")}
+            >
+              ···
+            </button>
+          </header>
+        </>
+      )}
       {(error || notice || !online) && (
         <div
           className={"rh-alert " + (error ? "error" : "")}
@@ -1094,6 +1126,50 @@ export function RehearsalApp() {
         </div>
       ) : (
         <>
+          {page === "characters" && (
+            <MobileCharacterStudio
+              initialCreate={characterCreate}
+              picking={characterPicking}
+              onMode={setCharacterMode}
+              onExit={() => {
+                navigate(characterPicking ? "cast" : "list");
+                void refresh().catch(report);
+              }}
+              onChanged={refresh}
+              onPick={async (c) => {
+                if (cast.includes(c.id))
+                  throw new Error(
+                    "This character is already in this scene. Choose someone else.",
+                  );
+                const i = slot ?? [0, 1].find((i) => !cast[i]);
+                if (i === undefined) {
+                  navigate("cast");
+                  setActor({
+                    id: c.id,
+                    source_character_id: c.id,
+                    name: c.profile.name,
+                    avatar: c.current_image_id
+                      ? `/api/characters/${c.id}/images/${c.current_image_id}/file`
+                      : null,
+                    description: c.original_description,
+                    profile: c.profile,
+                    snapshot_revision: c.profile_version,
+                  });
+                  setPanel("actor");
+                  return;
+                }
+                const next = cast.slice();
+                next[i] = c.id;
+                await send({
+                  kind: "cast",
+                  character_ids: next.map((x) => x || null),
+                });
+                setCast(next);
+                navigate("cast");
+              }}
+              onStart={rehearseWith}
+            />
+          )}
           {page === "list" && (
             <div className="rh-scroll">
               <section className="rh-hero">
@@ -1374,7 +1450,7 @@ export function RehearsalApp() {
                   <h2>{tr("Your characters", "我的角色")}</h2>
                   <button
                     className="rh-text-button"
-                    onClick={() => setPanel("quick")}
+                    onClick={() => openCharacters(true, true)}
                   >
                     ＋ {tr("Create", "创建")}
                   </button>
@@ -1459,7 +1535,7 @@ export function RehearsalApp() {
                     </p>
                     <button
                       className="rh-secondary"
-                      onClick={() => setPanel("quick")}
+                      onClick={() => openCharacters(true, true)}
                     >
                       ＋ {tr("Create character", "创建角色")}
                     </button>
@@ -1914,99 +1990,28 @@ export function RehearsalApp() {
           )}
         </>
       )}
-      {page === "list" && (
+      {(page === "list" ||
+        (page === "characters" &&
+          characterMode === "library" &&
+          !characterPicking)) && (
         <nav className="rh-nav" aria-label="Studio navigation">
-          <button className="active" onClick={() => navigate("list")}>
+          <button
+            className={page === "list" ? "active" : ""}
+            onClick={() => navigate("list")}
+          >
             <Glyph name="star" />
             {tr("Create", "创作")}
           </button>
-          <Link href="/characters">
-            <Glyph name="people" />
-            {tr("Characters", "角色")}
-          </Link>
-          <Link href="/creator">
-            <Glyph name="book" />
-            {tr("Story archive", "旧版作品")}
-          </Link>
+          <button
+            className={page === "characters" ? "active" : ""}
+            onClick={() => openCharacters()}
+          >
+            <Glyph name="people" /> Characters
+          </button>
         </nav>
       )}
       {panel && (
         <Sheet key={panel} title={titles[panel]} close={() => setPanel(null)}>
-          {panel === "quick" && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void task(async () => {
-                  const r = await rehearsal<{ character_id: string }>(
-                    "/characters",
-                    { operation_id: quickId || operation(), ...quick },
-                  );
-                  await refresh();
-                  const cc = await rehearsal<Character[]>("/characters");
-                  setCharacters(cc);
-                  const next = [...cast];
-                  const i = slot ?? [0, 1].find((i) => !next[i]) ?? 1;
-                  next[i] = r.character_id;
-                  setCast(next);
-                  await send({
-                    kind: "cast",
-                    character_ids: next.map((x) => x || null),
-                  });
-                  setQuick({ name: "", description: "" });
-                  localPut("quick", { name: "", description: "" });
-                  setQuickId(operation());
-                  setPanel(null);
-                });
-              }}
-            >
-              <p className="rh-muted">
-                {tr(
-                  "A name and a description. No portrait needed to begin.",
-                  "一个名字，一段描述，没有头像也可以开始。",
-                )}
-              </p>
-              <label>
-                {tr("Name", "名字")}
-                <input
-                  value={quick.name}
-                  onChange={(e) => {
-                    const q = { ...quick, name: e.target.value };
-                    setQuick(q);
-                    localPut("quick", q);
-                    localPut("quick-id", quickId);
-                  }}
-                  maxLength={30}
-                  required
-                />
-              </label>
-              <label>
-                {tr("Character description", "人物描述")}
-                <textarea
-                  value={quick.description}
-                  onChange={(e) => {
-                    const q = { ...quick, description: e.target.value };
-                    setQuick(q);
-                    localPut("quick", q);
-                    localPut("quick-id", quickId);
-                  }}
-                  minLength={10}
-                  maxLength={1500}
-                  rows={6}
-                  required
-                  placeholder={tr(
-                    "Their voice, what they want, what they hide…",
-                    "说话方式，想要什么，隐瞒着什么…",
-                  )}
-                />
-              </label>
-              <button className="rh-primary" disabled={busy || !online}>
-                {tr("Create & add to this scene", "创建并加入本场")} →
-              </button>
-              <Link className="rh-text-button" href="/characters/new">
-                {tr("Open full character creator", "打开完整角色创建")} →
-              </Link>
-            </form>
-          )}
           {panel === "actor" && actor && (
             <>
               <div className="rh-actor-detail">
@@ -2883,14 +2888,12 @@ export function RehearsalApp() {
                   <option value="zh">中文</option>
                 </select>
               </label>
-              <Link href="/creator">
-                {tr("Open previous story studio", "打开旧版故事工作室")}{" "}
-                <span>→</span>
-              </Link>
-              <Link href="/characters">
-                {tr("Characters & companion chat", "角色与陪伴聊天")}{" "}
-                <span>→</span>
-              </Link>
+              <button onClick={() => openCharacters()}>
+                Your characters <span>→</span>
+              </button>
+              <button onClick={() => openCharacters(true)}>
+                Create a character <span>＋</span>
+              </button>
               <p className="rh-muted">
                 {tr(
                   "Private by default. Rehearsals use character snapshots, never private chats.",

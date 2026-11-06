@@ -132,6 +132,7 @@ def create_app(
         )
         return {
             "id": c.id,
+            "archived": c.archived,
             "profile": revision(db, c).profile_json,
             "profile_version": c.current_profile_version,
             "current_image_id": c.current_image_id,
