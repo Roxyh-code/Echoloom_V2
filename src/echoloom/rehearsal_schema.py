@@ -97,6 +97,8 @@ class Command(Model):
         "rename",
         "result",
         "progress",
+        "read",
+        "settle",
         "delete_version",
         "stop_instruction",
         "feedback",
@@ -113,6 +115,7 @@ class Command(Model):
     character_ids: list[UUID | None] = Field(default_factory=list, max_length=2)
     setup: Setup | None = None
     position: int = Field(default=0, ge=0, le=100000)
+    revealed: int = Field(default=0, ge=0, le=100000)
 
     @model_validator(mode="after")
     def nonempty(self):

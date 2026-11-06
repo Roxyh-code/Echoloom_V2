@@ -27,7 +27,10 @@ from .rehearsal_domain import (
     demo_performance,
     fork,
     history,
+    line_count,
     new_document,
+    reading_base,
+    reading_view,
     render,
     state_at,
     state_change,
@@ -263,6 +266,7 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                         if change.after_block == index:
                             state_change(state, change, node_id, b["id"])
                     if index == 0:
+                        target["revealed"] = line_count(d, target["head"]) + 1
                         if request_event.get("persistent"):
                             target["instructions"].append(
                                 {
@@ -558,7 +562,7 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                 raise HTTPException(
                     409, "A newer revision exists. Reload it; your local input is kept."
                 )
-            if body.kind not in ("switch", "progress"):
+            if body.kind not in ("switch", "progress", "read"):
                 no_job(db, row.id)
             d = deepcopy(row.document)
             v = version(d, body.version_id)
@@ -571,7 +575,31 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                 "branch",
                 "replay",
             )
-            if kind == "cast":
+            node_id = body.node_id
+            if kind in (
+                "continue",
+                "direction",
+                "event",
+                "speak",
+                "branch",
+                "edit",
+                "replay",
+                "takeover",
+                "setup",
+                "settle",
+                "result",
+            ):
+                v, mapped = reading_base(
+                    d, v, op.id, explicit_fork=kind in ("branch", "edit", "replay")
+                )
+                node_id = mapped.get(node_id, node_id)
+            if kind == "settle":
+                pass
+            elif kind == "read":
+                if body.revealed > line_count(d, v["head"]):
+                    raise HTTPException(422, "This line has not been generated yet.")
+                v["revealed"] = body.revealed
+            elif kind == "cast":
                 if v["head"] or d.get("source"):
                     raise HTTPException(
                         409, "This cast has already been snapshotted for a performance."
@@ -677,7 +705,7 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                 }
                 d["status"] = "saved"
             elif kind == "feedback":
-                selected = d["nodes"].get(body.node_id)
+                selected = d["nodes"].get(node_id)
                 if not selected or selected["id"] not in {
                     n["id"] for n in history(d, v["head"])
                 }:
@@ -691,8 +719,8 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                 )
             elif kind in ("branch", "replay", "edit"):
                 nodes = history(d, v["head"])
-                selected = d["nodes"].get(body.node_id or v["head"])
-                if body.node_id and not selected:
+                selected = d["nodes"].get(node_id or v["head"])
+                if node_id and not selected:
                     raise HTTPException(404, "Paragraph not found.")
                 if selected and selected["id"] not in {n["id"] for n in nodes}:
                     raise HTTPException(404, "Paragraph is not on this version.")
@@ -784,6 +812,8 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                             "Preserved prefix",
                             "author",
                         )
+            if kind == "edit":
+                v["revealed"] = line_count(d, v["head"])
             if generate:
                 if len(d["cast"]) != 2:
                     raise HTTPException(422, "Choose two actors before starting.")
@@ -807,6 +837,8 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                         "Author performance",
                         "author",
                     )
+                if kind == "speak":
+                    v["revealed"] = line_count(d, v["head"])
                 d["status"] = "saved" if d.get("result") else "rehearsing"
                 op.status = "queued"
                 op.result = {
@@ -893,7 +925,11 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                 return {"job_id": j.id, "status": j.status}
             d = deepcopy(row.document)
             v = version(d, j.result["version_id"])
+            v, _ = reading_base(d, v, str(oid))
+            if d != row.document:
+                save(row, d)
             result = deepcopy(j.result)
+            result["version_id"] = v["id"]
             result["events"] = []
             if v["head"] != result["base_node_id"]:
                 result["generation"] = {
@@ -942,6 +978,7 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                 return op.result
             doc = deepcopy(row.document)
             v = version(doc, body.version_id)
+            doc, v = reading_view(doc, v)
             if body.node_id:
                 if body.node_id not in {n["id"] for n in history(doc, v["head"])}:
                     raise HTTPException(404, "Paragraph not found.")
@@ -1036,13 +1073,17 @@ def register_rehearsal(app, factory, locks, settings, serialize):
         format: str = "txt",
         include_title: bool = True,
         include_names: bool = True,
+        visible_only: bool = False,
     ):
         if format not in ("txt", "md"):
             raise HTTPException(422, "Choose TXT or Markdown.")
         with factory() as db:
             row = own(db, sid, request.state.user_id)
             v = version(row.document, version_id)
-            text = render(row.document, v, format, include_title, include_names)
+            export_doc = row.document
+            if visible_only:
+                export_doc, v = reading_view(export_doc, v)
+            text = render(export_doc, v, format, include_title, include_names)
             db.add(
                 RehearsalOperation(
                     id=uid(),

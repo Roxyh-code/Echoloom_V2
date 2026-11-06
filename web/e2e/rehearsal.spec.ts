@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { readCurrentSegment } from "./rehearsal-reader";
 test.beforeEach(async ({ request }) => {
   await request.post("http://127.0.0.1:8001/__test/reset");
 });
@@ -20,6 +21,7 @@ test("English mobile rehearsal → takeover → event → branch → save result
   });
   await page.locator(".rh-example").click();
   await page.getByRole("button", { name: /Start rehearsal/ }).click();
+  await readCurrentSegment(page);
   await expect(
     page.getByText("I remembered how you take it.", { exact: true }),
   ).toBeVisible();
@@ -34,6 +36,7 @@ test("English mobile rehearsal → takeover → event → branch → save result
     .getByRole("textbox", { name: "Your performance" })
     .fill("Some things, you do remember.");
   await page.getByRole("button", { name: "Send performance" }).click();
+  await readCurrentSegment(page);
   await expect(
     page.getByText("Some things, you do remember.", { exact: true }),
   ).toBeVisible();
@@ -49,6 +52,7 @@ test("English mobile rehearsal → takeover → event → branch → save result
     .getByLabel("What happens?", { exact: true })
     .fill("The departure announcement interrupts them.");
   await panel.getByRole("button", { name: /Add event/ }).click();
+  await readCurrentSegment(page);
   await expect(
     page.getByRole("button", { name: "Continue", exact: true }),
   ).toBeEnabled();
@@ -63,6 +67,7 @@ test("English mobile rehearsal → takeover → event → branch → save result
     fullPage: true,
   });
   await panel.getByRole("button", { name: /A partial confession/ }).click();
+  await readCurrentSegment(page);
   await expect(
     page.getByText(
       "I told them where you would be. I should have told you myself.",
@@ -174,6 +179,7 @@ test("in-scene creation includes portraits, preserves cast and setup at 320px", 
     "They meet at a station on the evening before the gallery opens.",
   );
   await page.getByRole("button", { name: /Start rehearsal/ }).click();
+  await readCurrentSegment(page);
   await expect(
     page.getByText("I hoped we would have a moment to talk.", { exact: true }),
   ).toBeVisible();
@@ -222,4 +228,75 @@ test("permission denial never falls back to cached scene text", async ({
       exact: true,
     }),
   ).not.toBeVisible();
+});
+
+test("one sentence at a time → refresh keeps position → intervene without unseen future", async ({
+  page,
+  request,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/rehearsal");
+  await page.locator(".rh-example").click();
+  await page.getByRole("button", { name: /Start rehearsal/ }).click();
+  await expect(page.locator(".rehearsal-app")).toHaveAttribute(
+    "data-generating",
+    "false",
+  );
+  await expect(
+    page.getByText("Rain softens the station lights.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Two cups of coffee wait on the bench.", { exact: false }),
+  ).not.toBeVisible();
+  await expect(
+    page.getByText("I remembered how you take it.", { exact: true }),
+  ).not.toBeVisible();
+  const initial = await (await request.get("/api/rehearsal/scenes")).json();
+  const sid = initial[0].id;
+  const original = initial[0].document.active_version;
+  const originalHead = initial[0].document.versions[original].head;
+  const originalNodes = Object.keys(initial[0].document.nodes).length;
+  await page.getByRole("button", { name: "Next line", exact: true }).click();
+  await expect(
+    page.getByText(
+      "Rain softens the station lights. Two cups of coffee wait on the bench.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText("I remembered how you take it.", { exact: true }),
+  ).not.toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByText(
+      "Rain softens the station lights. Two cups of coffee wait on the bench.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText("I remembered how you take it.", { exact: true }),
+  ).not.toBeVisible();
+  const read = await (await request.get(`/api/rehearsal/scenes/${sid}`)).json();
+  expect(Object.keys(read.document.nodes)).toHaveLength(originalNodes);
+  expect(read.document.versions[original].head).toBe(originalHead);
+  await page.getByRole("button", { name: "Intervene", exact: true }).click();
+  const panel = page.getByRole("dialog");
+  await panel.getByRole("button", { name: /Play a character/ }).click();
+  await panel.getByRole("button", { name: /Lin.*Play this role/ }).click();
+  const changed = await (
+    await request.get(`/api/rehearsal/scenes/${sid}`)
+  ).json();
+  expect(changed.document.active_version).not.toBe(original);
+  const head =
+    changed.document.nodes[
+      changed.document.versions[changed.document.active_version].head
+    ];
+  expect(head.blocks.map((b: any) => b.text).join("")).toBe(
+    "Rain softens the station lights. Two cups of coffee wait on the bench.",
+  );
+  expect(changed.document.versions[original].head).toBe(originalHead);
+  await page.screenshot({
+    path: "test-results/rehearsal-paced-reading.png",
+    fullPage: true,
+  });
 });

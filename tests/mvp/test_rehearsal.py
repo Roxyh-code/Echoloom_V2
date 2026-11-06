@@ -10,7 +10,7 @@ import pytest
 from sqlalchemy import select
 
 from echoloom.db import RehearsalOperation, sessions
-from echoloom.rehearsal_domain import history
+from echoloom.rehearsal_domain import history, line_count, sentences
 
 
 def create(client, demo=True, **fields):
@@ -59,7 +59,14 @@ def wait(client, result):
 def completed(client, s, kind="continue", **fields):
     j = wait(client, command(client, s, kind, **fields))
     assert j["status"] == "completed", j
-    return j["scene"]
+    s = j["scene"]
+    d = s["document"]
+    return command(
+        client,
+        s,
+        "read",
+        revealed=line_count(d, d["versions"][d["active_version"]]["head"]),
+    )
 
 
 def texts(s, vid=None):
@@ -509,3 +516,149 @@ def test_retry_and_delete_scrub_content_without_resurrecting_a_scene(setup):
         ):
             assert op.payload == {} and op.status == "deleted"
     assert c.get("/api/rehearsal/scenes/" + s["id"]).status_code == 404
+
+
+def test_sentence_boundaries_are_lossless_for_english_chinese_and_quotes():
+    cases = [
+        ("Dr. Lin checks the clock. Xu waits.", 2),
+        ("“Are you leaving?” she asks. “Not yet.”", 3),
+        ("她停下脚步。许没有说话！车还没来？", 3),
+        ("The price is 3.14. Nothing else changes.\nA new paragraph.", 3),
+        ("One thought without punctuation", 1),
+    ]
+    for text, count in cases:
+        parts = sentences(text)
+        assert "".join(parts) == text
+        assert len(parts) == count
+
+
+def test_first_sentence_and_read_cursor_do_not_generate_or_duplicate_content(setup):
+    c, text, *_ = setup
+    s = create(c)
+    j = wait(c, command(c, s, "continue"))
+    s = j["scene"]
+    d = s["document"]
+    v = d["versions"][d["active_version"]]
+    assert v["revealed"] == 1
+    assert line_count(d, v["head"]) > 1
+    head = v["head"]
+    count = len(d["nodes"])
+    calls = len(text.calls)
+    s = command(c, s, "read", revealed=2)
+    assert s["document"]["versions"][v["id"]]["revealed"] == 2
+    assert s["document"]["versions"][v["id"]]["head"] == head
+    assert len(s["document"]["nodes"]) == count and len(text.calls) == calls
+    assert (
+        c.get("/api/rehearsal/scenes/" + s["id"]).json()["document"]["versions"][
+            v["id"]
+        ]["revealed"]
+        == 2
+    )
+    r = c.post(
+        "/api/rehearsal/scenes/" + s["id"] + "/commands",
+        json={
+            "operation_id": str(uuid4()),
+            "expected_revision": s["revision"],
+            "kind": "read",
+            "revealed": 9999,
+        },
+    )
+    assert r.status_code == 422
+
+
+def test_intervention_at_sentence_prefix_excludes_unseen_text_and_state(setup):
+    from echoloom.rehearsal_schema import Performance
+
+    c, text, *_ = setup
+    a, b = quick(c, "Lin"), quick(c, "Xu")
+    text.rehearsal = lambda ctx: Performance(
+        blocks=[
+            {
+                "type": "dialogue",
+                "character_id": b,
+                "text": "I came back. I told them your secret.",
+            },
+            {
+                "type": "narration",
+                "character_id": None,
+                "text": "Lin now knows who betrayed her.",
+            },
+        ],
+        changes=[
+            {
+                "after_block": 0,
+                "kind": "fact",
+                "text": "Xu disclosed the secret.",
+                "known_by": [a, b],
+            }
+        ],
+    )
+    s = wait(c, command(c, create(c, False, character_ids=[a, b]), "continue"))["scene"]
+    original = s["document"]["active_version"]
+    original_text = texts(s)
+    # Choosing an alternative must not let its planner see an unrevealed disclosure.
+    captured = []
+    from echoloom.rehearsal_schema import Directions
+
+    def choices(ctx):
+        captured.append(json.loads(ctx[-1]["content"]))
+        return Directions(
+            options=[
+                {
+                    "id": "x",
+                    "title": "Wait",
+                    "choice": "Wait quietly.",
+                    "consequence": "The secret stays private.",
+                },
+                {
+                    "id": "y",
+                    "title": "Leave",
+                    "choice": "Leave quietly.",
+                    "consequence": "Distance increases.",
+                },
+            ]
+        )
+
+    text.rehearsal_directions = choices
+    r = c.post(
+        "/api/rehearsal/scenes/" + s["id"] + "/directions",
+        json={"operation_id": str(uuid4())},
+    )
+    assert r.status_code == 200
+    assert "I told them your secret" not in json.dumps(captured[0])
+    assert not captured[0]["state"]["world_facts"]
+    assert c.get("/api/rehearsal/scenes/" + s["id"]).json()["revision"] == s["revision"]
+    # A takeover pins only the sentence read, preserving the untouched full original.
+    s = command(c, s, "takeover", target_id=a)
+    current = s["document"]["active_version"]
+    assert current != original
+    assert texts(s) == "I came back."
+    assert texts(s, original) == original_text
+    head = s["document"]["versions"][current]["head"]
+    assert not s["document"]["nodes"][head]["state"]["world_facts"]
+    assert s["document"]["versions"][current]["takeover"] == a
+
+
+def test_mid_sentence_review_result_and_export_keep_only_read_prefix(setup):
+    c, *_ = setup
+    s = wait(c, command(c, create(c), "continue"))["scene"]
+    vid = s["document"]["active_version"]
+    exported = c.get(
+        "/api/rehearsal/scenes/" + s["id"] + "/export?visible_only=true"
+    ).text
+    assert (
+        "Rain softens" in exported
+        and "Two cups" not in exported
+        and "I remembered" not in exported
+    )
+    s = command(c, s, "settle")
+    assert s["document"]["active_version"] != vid
+    assert texts(s) == "Rain softens the station lights."
+    s = command(c, s, "result")
+    child = create(
+        c,
+        False,
+        source_scene_id=s["id"],
+        setup={"premise": "The friends step onto the platform."},
+    )
+    assert "I remembered" not in child["document"]["source"]["excerpt"]

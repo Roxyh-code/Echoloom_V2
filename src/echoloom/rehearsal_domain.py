@@ -21,6 +21,127 @@ def history(doc, head):
     return list(reversed(nodes))
 
 
+def sentences(text):
+    """Lossless sentence units; identical boundaries to the mobile reader."""
+    units, start, i = [], 0, 0
+    endings = ".!?。！？"
+    closers = "\"'”’)]』」"
+    abbreviations = ("Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Sr.", "Jr.", "St.")
+    while i < len(text):
+        ch = text[i]
+        end = i + 1
+        boundary = ch == "\n"
+        if ch in endings:
+            while end < len(text) and text[end] in endings + closers:
+                end += 1
+            boundary = ch in "。！？" or end == len(text) or text[end].isspace()
+            word = (
+                text[start : i + 1].split()[-1] if text[start : i + 1].split() else ""
+            )
+            if ch == "." and word in abbreviations and end < len(text):
+                boundary = False
+        if boundary:
+            while end < len(text) and text[end].isspace():
+                end += 1
+            if text[start:end].strip():
+                units.append(text[start:end])
+            elif units:
+                units[-1] += text[start:end]
+            start, i = end, end
+        else:
+            i += 1
+    if text[start:]:
+        if text[start:].strip() or not units:
+            units.append(text[start:])
+        else:
+            units[-1] += text[start:]
+    return units
+
+
+def line_count(doc, head):
+    return sum(
+        len(sentences(b["text"])) for n in history(doc, head) for b in n["blocks"]
+    )
+
+
+def reading_view(doc, v):
+    """A private copy containing only the text and sourced state already revealed."""
+    limit = v.get("revealed", line_count(doc, v["head"]))
+    d, viewed = deepcopy(doc), deepcopy(v)
+    head, complete_blocks = None, set()
+    remaining = limit
+    for n in history(doc, v["head"]):
+        blocks = []
+        for block in n["blocks"]:
+            parts = sentences(block["text"])
+            if remaining <= 0:
+                break
+            if remaining >= len(parts):
+                blocks.append(deepcopy(block))
+                complete_blocks.add(block["id"])
+                remaining -= len(parts)
+            else:
+                blocks.append(
+                    deepcopy(block) | {"text": "".join(parts[:remaining]).rstrip()}
+                )
+                remaining = 0
+        if not blocks:
+            break
+        copied = deepcopy(n)
+        copied["parent"] = head
+        copied["blocks"] = blocks
+        d["nodes"][n["id"]] = copied
+        head = n["id"]
+        if remaining <= 0:
+            break
+    viewed["head"] = head
+    viewed["revealed"] = limit
+    if head:
+        s = deepcopy(d["nodes"][head]["state"])
+        for key in ("world_facts", "beliefs", "goals", "relationships", "threads"):
+            s[key] = [
+                f
+                for f in s[key]
+                if f.get("source_node") not in doc["nodes"]
+                or f.get("source_block") in complete_blocks
+            ]
+        d["nodes"][head]["state"] = s
+    return d, viewed
+
+
+def reading_base(doc, v, operation, explicit_fork=False):
+    """Fork away unread futures before an author acts; the original remains intact."""
+    total = line_count(doc, v["head"])
+    if v.get("revealed", total) >= total:
+        return v, {}
+    visible, base = reading_view(doc, v)
+    original_head = base["head"]
+    head = original_head
+    mapping = {}
+    if head and visible["nodes"][head]["blocks"] != doc["nodes"][head]["blocks"]:
+        key = uid()
+        prefix = deepcopy(visible["nodes"][head])
+        prefix.update(
+            id=key,
+            reason="Read prefix · " + str(base["revealed"]),
+            operation_id=operation,
+        )
+        doc["nodes"][key] = prefix
+        mapping[head] = key
+        head = key
+    if explicit_fork:
+        result = deepcopy(v)
+        result.update(head=head, revealed=base["revealed"])
+    else:
+        active = doc["active_version"]
+        result = fork(doc, v, head, "Continued from line " + str(base["revealed"]))
+        result["revealed"] = base["revealed"]
+        result["takeover"] = v["takeover"]
+        if active != v["id"]:
+            doc["active_version"] = active
+    return result, mapping
+
+
 def initial_state(setup, cast):
     return {
         "world_facts": [],
@@ -61,6 +182,9 @@ def fork(doc, v, head, reason, label=""):
         reason=reason,
         position=0,
         takeover=None,
+        revealed=min(
+            v.get("revealed", line_count(doc, v["head"])), line_count(doc, head)
+        ),
     )
     doc["versions"][key] = copy
     doc["active_version"] = key
@@ -113,6 +237,7 @@ def new_document(setup, cast, demo=False, source=None):
                 "instructions": [],
                 "takeover": None,
                 "position": 0,
+                "revealed": 0,
             }
         },
         "active_version": key,

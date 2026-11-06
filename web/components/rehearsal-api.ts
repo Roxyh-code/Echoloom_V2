@@ -76,6 +76,7 @@ export type Version = {
   setup: Setup;
   takeover: string | null;
   position: number;
+  revealed?: number;
   instructions: { id: string; text: string; active: boolean }[];
 };
 export type Scene = {
@@ -143,6 +144,7 @@ export type Command = {
   input_type?: string;
   setup?: Setup;
   position?: number;
+  revealed?: number;
   character_ids?: (string | null)[];
 };
 export { type Character };

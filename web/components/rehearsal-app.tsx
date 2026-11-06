@@ -1,5 +1,6 @@
 "use client";
 import { MobileCharacterStudio } from "./mobile-character-studio";
+import { countLines, visibleLines, readState } from "./rehearsal-reading";
 import { useEffect, useRef, useState } from "react";
 import {
   Actor,
@@ -302,6 +303,7 @@ export function RehearsalApp() {
   current.current = scene;
   const commandGuard = useRef(false);
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const commandQueue = useRef<Promise<unknown>>(Promise.resolve());
   const reader = useRef<HTMLDivElement>(null);
   const following = useRef(true);
   const progressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -312,10 +314,43 @@ export function RehearsalApp() {
   const doc = scene?.document;
   const version = doc?.versions[doc.active_version];
   const nodes = scene && version ? chain(scene, version.head) : [];
+  const totalLines = countLines(nodes);
+  const revealed = Math.min(version?.revealed ?? totalLines, totalLines);
+  const visibleNodes = visibleLines(nodes, revealed);
+  const waitingLines = totalLines - revealed;
+  const visibleText = visibleNodes
+    .map((n) => n.blocks.map((b) => b.text).join(""))
+    .join("");
+  const lastReadingView = useRef("");
+  useEffect(() => {
+    if (page !== "stage") {
+      lastReadingView.current = "";
+      return;
+    }
+    const key = scene?.id + ":" + version?.id;
+    if (lastReadingView.current !== key) {
+      lastReadingView.current = key;
+      return;
+    }
+    if (following.current)
+      requestAnimationFrame(() =>
+        reader.current?.scrollTo({
+          top: reader.current.scrollHeight,
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "instant"
+            : "smooth",
+        }),
+      );
+    else setUnread(true);
+  }, [page, scene?.id, version?.id, visibleText]);
   const actors = doc?.cast || [];
   const taken = actors.find((a) => a.id === version?.takeover);
-  const state = nodes.at(-1)?.state || doc?.initial_state;
+  const state =
+    readState(nodes, revealed, new Set(Object.keys(doc?.nodes || {}))) ||
+    doc?.initial_state;
   function accept(s: Scene) {
+    if (current.current?.id === s.id && current.current.revision > s.revision)
+      return;
     current.current = s;
     setScene(s);
     setScenes((old) => [s, ...old.filter((x) => x.id !== s.id)]);
@@ -533,7 +568,28 @@ export function RehearsalApp() {
       document.documentElement.style.removeProperty("--rh-vh");
     };
   }, []);
-  async function send(
+  function send(
+    cmd: Command,
+    oid = operation(),
+  ): Promise<Scene & { job_id?: string | null }> {
+    const target = current.current?.id;
+    const originVersion = current.current?.document.active_version;
+    const next = commandQueue.current
+      .catch(() => {})
+      .then(() => {
+        if (current.current?.id !== target)
+          throw new Error(
+            "The scene changed. Your previous input is still saved.",
+          );
+        return executeSend(
+          { ...cmd, version_id: cmd.version_id || originVersion },
+          oid,
+        );
+      });
+    commandQueue.current = next;
+    return next;
+  }
+  async function executeSend(
     cmd: Command,
     oid = operation(),
   ): Promise<Scene & { job_id?: string | null }> {
@@ -652,16 +708,6 @@ export function RehearsalApp() {
         }
         if (current.current?.id === j.scene.id) {
           accept(j.scene);
-          if (following.current)
-            requestAnimationFrame(() =>
-              reader.current?.scrollTo({
-                top: reader.current.scrollHeight,
-                behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-                  ? "instant"
-                  : "smooth",
-              }),
-            );
-          else setUnread(true);
         }
         if (["completed", "cancelled", "failed"].includes(j.status)) {
           setJob(null);
@@ -676,7 +722,7 @@ export function RehearsalApp() {
           if (j.status === "completed" && !localGet("tip-seen", false)) {
             setNotice(
               tr(
-                "Pause anytime. Change a line, or step into a character.",
+                "Take your time. Next line reveals one sentence; step in whenever you like.",
                 "随时暂停，改变一句话或亲自演一个角色。",
               ),
             );
@@ -794,6 +840,19 @@ export function RehearsalApp() {
     });
   }
   async function enterReview() {
+    setError("");
+    try {
+      const s = current.current!;
+      const v = s.document.versions[s.document.active_version];
+      if (
+        (v.revealed ?? countLines(chain(s, v.head))) <
+        countLines(chain(s, v.head))
+      )
+        await send({ kind: "settle" });
+    } catch (e) {
+      report(e);
+      return;
+    }
     navigate("review");
     setReview(null);
     setReviewError("");
@@ -832,7 +891,7 @@ export function RehearsalApp() {
       const s = current.current!;
       const v = s.document.versions[s.document.active_version];
       const head = selected?.node.id || v.head;
-      const key = `choices:${s.id}:${v.id}:${head}`;
+      const key = `choices:${s.id}:${v.id}:${head}:read-${v.revealed ?? countLines(chain(s, v.head))}`;
       let result = localGet<{ options: Choice[] } | null>(key, null);
       if (!result) {
         const oid = localGet(key + ":operation", "") || operation();
@@ -854,6 +913,7 @@ export function RehearsalApp() {
       format: exportFormat,
       include_names: String(exportNames),
       include_title: String(exportTitle),
+      visible_only: "true",
     });
     const r = await fetch(`/api/rehearsal/scenes/${s.id}/export?${q}`);
     if (!r.ok) throw new Error("Could not prepare export.");
@@ -970,6 +1030,8 @@ export function RehearsalApp() {
   return (
     <main
       className={"rehearsal-app rh-" + page}
+      data-working={busy ? "true" : "false"}
+      data-generating={job ? "true" : "false"}
       style={{ "--rh-reading": font + "px" } as React.CSSProperties}
     >
       {page !== "characters" && (
@@ -1680,7 +1742,7 @@ export function RehearsalApp() {
                   <p>{version.setup.premise}</p>
                   <span className="rh-reading-divider">✧</span>
                 </div>
-                {bodyBlocks(nodes)}
+                {bodyBlocks(visibleNodes)}
                 {!nodes.length && !job && (
                   <div className="rh-empty">
                     <p>{tr("The stage is ready.", "舞台已准备好。")}</p>
@@ -1731,6 +1793,26 @@ export function RehearsalApp() {
                 </button>
               )}
               <footer className="rh-stage-footer">
+                {totalLines > 0 && (
+                  <div className="rh-line-progress" role="status">
+                    {revealed} / {totalLines} {tr("lines", "句")}
+                    <span>{tr("At your pace", "按你的节奏")}</span>
+                  </div>
+                )}
+                {taken && waitingLines > 0 && !job && (
+                  <button
+                    className="rh-secondary rh-takeover-next"
+                    aria-label="Next line"
+                    disabled={busy || !online}
+                    onClick={() =>
+                      task(async () => {
+                        await send({ kind: "read", revealed: revealed + 1 });
+                      })
+                    }
+                  >
+                    {tr("Next line", "下一句")} ↓
+                  </button>
+                )}
                 {taken ? (
                   <>
                     <div className="rh-takeover-status">
@@ -1823,13 +1905,20 @@ export function RehearsalApp() {
                       {tr("Intervene", "我来介入")}
                     </button>
                     <button
-                      aria-label={job ? "Pause" : "Continue"}
+                      aria-label={
+                        job ? "Pause" : waitingLines ? "Next line" : "Continue"
+                      }
                       className="rh-primary"
                       disabled={busy || !online}
                       onClick={() =>
                         task(async () => {
                           if (job)
                             await rehearsal("/jobs/" + job + "/pause", {});
+                          else if (waitingLines)
+                            await send({
+                              kind: "read",
+                              revealed: revealed + 1,
+                            });
                           else await send({ kind: "continue" });
                         })
                       }
@@ -1841,7 +1930,9 @@ export function RehearsalApp() {
                         </>
                       ) : (
                         <>
-                          {tr("Continue", "继续演")}
+                          {waitingLines
+                            ? tr("Next line", "下一句")
+                            : tr("Continue", "继续演")}
                           <span>→</span>
                         </>
                       )}
