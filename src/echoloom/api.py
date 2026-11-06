@@ -176,6 +176,9 @@ def create_app(
                 "database_ready": ready,
                 "story_database_ready": inspect(engine).has_table("stories"),
                 "creator_database_ready": inspect(engine).has_table("creator_works"),
+                "rehearsal_database_ready": inspect(engine).has_table(
+                    "rehearsal_scenes"
+                ),
                 "companion_database_ready": inspect(engine).has_table(
                     "calendar_connections"
                 ),
@@ -682,6 +685,9 @@ def create_app(
     from .creator_service import register_creator
 
     register_creator(app, factory, locks, settings, render, serialize)
+    from .rehearsal_service import register_rehearsal
+
+    register_rehearsal(app, factory, locks, settings, serialize)
     return app
 
 

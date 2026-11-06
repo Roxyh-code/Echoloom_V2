@@ -145,7 +145,9 @@ class OpenAIText:
                     model=s.llm_model,
                     messages=messages,
                     max_completion_tokens=s.story_max_output_tokens
-                    if schema in (StoryOutput, CreatorOutput)
+                    if schema
+                    and schema.__name__
+                    in ("StoryOutput", "CreatorOutput", "Performance")
                     else s.max_output_tokens,
                     **({"response_format": {"type": "json_object"}} if schema else {}),
                 )
@@ -259,6 +261,77 @@ class OpenAIText:
                 },
             ],
             Refinement,
+        )
+
+    def rehearsal(self, context):
+        from .rehearsal_domain import validate_performance
+        from .rehearsal_schema import Performance
+
+        frame = json.loads(context[-1]["content"])
+        # This path is bilingual and intentionally does not use Creator's English-only guard.
+        adapter = OpenAIText(
+            self.settings.model_copy(
+                update={
+                    "api_timeout_seconds": min(60, self.settings.api_timeout_seconds)
+                }
+            )
+        )
+        for attempt in range(3):
+            try:
+                output = adapter._request(context, Performance)
+                return validate_performance(
+                    output, {"cast": frame["cast"]}, {"takeover": frame["takeover"]}
+                )
+            except (ValueError, InvalidModelOutput):
+                if attempt == 2:
+                    raise InvalidModelOutput(
+                        "This segment could not be completed. Your saved paragraphs are safe."
+                    ) from None
+                context = context + [
+                    {
+                        "role": "system",
+                        "content": "Repair the JSON structure and actor attribution. Only these actor IDs may speak: "
+                        + json.dumps(
+                            [
+                                m["id"]
+                                for m in frame["cast"]
+                                if m["id"] != frame["takeover"]
+                            ]
+                        )
+                        + ". Narration uses null. Do not perform the taken-over actor. Do not invent an actor or a fact.",
+                    }
+                ]
+
+    def rehearsal_directions(self, context):
+        from .rehearsal_schema import Directions
+
+        return self._request(
+            context
+            + [
+                {
+                    "role": "system",
+                    "content": "Return JSON matching "
+                    + json.dumps(Directions.model_json_schema())
+                    + ". Propose exactly two materially different possibilities, in setup.language, one based on a decision or disclosure and the other on a different action or relationship direction. Do not perform them yet. Avoid predictions of certainty or probability.",
+                }
+            ],
+            Directions,
+        )
+
+    def rehearsal_review(self, context):
+        from .rehearsal_schema import Review
+
+        return self._request(
+            context
+            + [
+                {
+                    "role": "system",
+                    "content": "Return JSON matching "
+                    + json.dumps(Review.model_json_schema())
+                    + ". Summarize only completed text in this version, in setup.language. Changes and unresolved threads must be evidenced by actual text. Do not infer new events or copy hidden author notes.",
+                }
+            ],
+            Review,
         )
 
     def creator(self, context):

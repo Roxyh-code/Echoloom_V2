@@ -1,22 +1,24 @@
 # EchoLoom
 
-**Create characters. Discover their stories.**
+**Let your characters play it out.**
 
-A mobile-first character-driven story studio. Describe a character to generate their profile and portrait together, shape their motivations, then play a role or direct two characters. Explore, edit and branch a story, save named versions, and export a draft.
+A mobile scene rehearsal studio for fiction creators. Choose two characters, describe a situation, and watch a short performance. Give a direction, introduce an event, take over a role, or try a different version. Save the scene you believe in and rehearse what comes next.
 
-**Creator MVP:** open `http://127.0.0.1:3000/creator`. The root URL now opens Creator. Try **The Last Train** without model keys, or use your configured text and image providers for original characters and free-form stories. Demo mode is explicitly labeled.
+**New default entrance:** `http://127.0.0.1:3000/rehearsal` (the root URL opens it too). Starry indigo theatre, champagne controls, serif headings, English by default. Existing characters and private data are preserved; portraits are optional for quick creation.
 
-- **[Windows update and Creator walkthrough](docs/product/creator-mvp.md)** — stop both services, back up `work`, pull, run migration **0004**, then restart.
-- [Full Creator PRD](docs/product/creator-mobile-mvp-prd.md) · [Current positioning and next steps](docs/product/README.md) · [Validation and remaining checks](docs/product/creator-validation.md)
+- **[Windows update and rehearsal walkthrough](docs/product/scene-rehearsal.md)** — stop both services, back up `work`, pull, run migration **0005**, restart.
+- [User-provided rehearsal PRD](docs/product/scene-rehearsal-prd.md) · [Current positioning and next steps](docs/product/README.md)
 - [First installation and model configuration](docs/mvp/README.md)
 
-The existing companion remains at `/characters`: saved chats, portraits, **Do something together** stories and optional Google Calendar. [Previous companion demo](demo/README.md) · [Story guide](docs/mvp/story-mode.md) · [Calendar setup](docs/mvp/life-companion.md). Existing records are not translated or deleted. Real AI operations require an API account with model access and available credits.
+Try **The station reunion · Demo** without model keys. It is clearly labeled and uses prepared performances; saving, versions, exports and source-linked next scenes really persist. Custom rehearsals use your server's text model. Actual model quality, costs and physical-phone behavior still need separate validation.
+
+The previous Creator remains at `/creator`, and the companion at `/characters`: saved chats, portraits, **Do something together** stories and optional Google Calendar. [Previous Creator guide](docs/product/creator-mvp.md) · [Companion demo](demo/README.md) · [Calendar setup](docs/mvp/life-companion.md). No old work is silently converted or deleted.
 
 ## Project structure
 
 ```text
 src/echoloom/   Backend API, validated profiles, database models, provider adapters
-web/           Next.js mobile Creator, companion, and browser tests
+web/           Next.js mobile rehearsal studio, previous Creator, and companion
 alembic/       Database migrations
 tests/mvp/     Backend regression tests
 docs/mvp/      MVP requirements and development guide
@@ -29,7 +31,7 @@ experiments/   Method comparisons and research evaluations
 
 ## Existing records survive updates
 
-Keep `.env`, `work/echoloom.db`, `work/portraits/`, `work/secrets/calendar.key`, and the same database/storage settings. Pulling code, restarting the application, or refreshing the browser does not delete saved characters, messages, versions, or portraits. Back up data with the application stopped. Run `alembic upgrade head` after upgrading dependencies. Migration 0002 adds story tables and timeline ordering; migration 0003 adds accounts and calendar support. Migration 0004 adds Creator works and recovery requests, and a character archive flag. These migrations preserve existing records. The first local account claims existing characters, history and Creator works.
+Keep `.env`, `work/echoloom.db`, `work/portraits/`, `work/secrets/calendar.key`, and the same database/storage settings. Pulling code, restarting the application, or refreshing the browser does not delete saved characters, messages, versions, or portraits. Back up data with the application stopped. Run `alembic upgrade head` after upgrading dependencies. Migration 0002 adds story tables and timeline ordering; migration 0003 adds accounts and calendar support. Migration 0004 adds Creator works and recovery requests, and a character archive flag. Migration 0005 adds rehearsal scenes and durable operations. These migrations preserve existing records. The first local account claims existing characters, history, Creator works and rehearsals.
 
 ## Research foundations
 

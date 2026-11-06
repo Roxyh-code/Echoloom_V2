@@ -13,7 +13,16 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select, update
 
 from .companion_models import Account, LoginSession
-from .db import Character, Conversation, CreatorRequest, CreatorWork, Portrait, Story
+from .db import (
+    Character,
+    Conversation,
+    CreatorRequest,
+    CreatorWork,
+    Portrait,
+    RehearsalOperation,
+    RehearsalScene,
+    Story,
+)
 
 COOKIE = "echoloom_session"
 
@@ -162,7 +171,12 @@ def register_accounts(app, factory, locks, settings):
                     .where(Character.owner_id.is_(None))
                     .values(owner_id=row.id)
                 )
-                for model in (CreatorWork, CreatorRequest):
+                for model in (
+                    CreatorWork,
+                    CreatorRequest,
+                    RehearsalScene,
+                    RehearsalOperation,
+                ):
                     db.execute(
                         update(model)
                         .where(model.owner_id.is_(None))

@@ -3,7 +3,10 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { AccountShell } from "./account-shell";
 export function AppChrome({ children }: { children: React.ReactNode }) {
-  const creator = usePathname().startsWith("/creator");
+  const pathname = usePathname();
+  const creator = ["/creator", "/rehearsal"].some((p) =>
+    pathname.startsWith(p),
+  );
   return (
     <>
       {!creator && (
@@ -13,7 +16,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
             <span className="badge">companion</span>
           </Link>
           <nav>
-            <Link href="/creator">Creator ↗</Link>
+            <Link href="/rehearsal">Rehearsal studio ↗</Link>
             <Link href="/characters">My Characters</Link>
             <Link href="/characters/new" className="nav-create">
               ＋ Create Character

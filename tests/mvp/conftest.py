@@ -151,6 +151,58 @@ class FakeText:
             suggestions=["Ask more quietly", "Let the character explain"],
         )
 
+    def rehearsal(self, context):
+        import json
+
+        from echoloom.rehearsal_schema import Performance
+
+        self.calls.append(("rehearsal", context))
+        if self.fail:
+            raise ProviderError("Simulated rehearsal failure")
+        frame = json.loads(context[-1]["content"])
+        actor = next(m for m in frame["cast"] if m["id"] != frame["takeover"])
+        return Performance(
+            blocks=[
+                {
+                    "type": "narration",
+                    "character_id": None,
+                    "text": "The rain softens the station lights.",
+                },
+                {
+                    "type": "dialogue",
+                    "character_id": actor["id"],
+                    "text": "I hoped we would have a moment to talk.",
+                },
+            ]
+        )
+
+    def rehearsal_directions(self, context):
+        from echoloom.rehearsal_schema import Directions
+
+        return Directions(
+            options=[
+                {
+                    "id": "truth",
+                    "title": "An honest answer",
+                    "choice": "Let the truth come out.",
+                    "consequence": "Both characters learn the truth.",
+                },
+                {
+                    "id": "distance",
+                    "title": "A quiet departure",
+                    "choice": "Let the character leave.",
+                    "consequence": "The secret remains unspoken.",
+                },
+            ]
+        )
+
+    def rehearsal_review(self, context):
+        from echoloom.rehearsal_schema import Review
+
+        return Review(
+            summary="Two characters meet at the station.", changes=[], threads=[]
+        )
+
     def chat(self, messages):
         self.calls.append(("chat", messages))
         if self.fail:

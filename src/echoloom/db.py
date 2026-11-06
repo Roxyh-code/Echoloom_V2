@@ -270,3 +270,29 @@ class CreatorRequest(Base):
     status: Mapped[str] = mapped_column(String(30))
     result: Mapped[dict | None] = mapped_column(JSON, default=None)
     created_at: Mapped[str] = mapped_column(default=now)
+
+
+class RehearsalScene(Base):
+    __tablename__ = "rehearsal_scenes"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    owner_id: Mapped[str | None] = mapped_column(
+        ForeignKey("user_accounts.id"), default=None, index=True
+    )
+    revision: Mapped[int] = mapped_column(default=0, server_default="0")
+    document: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[str] = mapped_column(default=now)
+    updated_at: Mapped[str] = mapped_column(default=now)
+
+
+class RehearsalOperation(Base):
+    __tablename__ = "rehearsal_operations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    owner_id: Mapped[str | None] = mapped_column(
+        ForeignKey("user_accounts.id"), default=None
+    )
+    scene_id: Mapped[str | None] = mapped_column(String(36), default=None, index=True)
+    kind: Mapped[str] = mapped_column(String(40))
+    payload: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(24), default="completed")
+    result: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[str] = mapped_column(default=now)

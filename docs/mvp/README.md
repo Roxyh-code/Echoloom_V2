@@ -1,5 +1,7 @@
 # EchoLoom MVP v0.1
 
+> 当前默认产品是移动排练工作室：见 [新版本更新与使用](../product/scene-rehearsal.md)。首次安装仍可沿用下面的依赖与启动命令，数据库请升级到最新迁移 0005。
+
 A local, single-user fictional character studio: describe → create → edit → chat → refine. The interface, system messages, and new AI-generated text use English. Existing character content and conversations remain unchanged. Original research assets remain under `literature/`.
 
 ## Requirements
