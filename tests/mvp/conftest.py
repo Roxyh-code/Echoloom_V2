@@ -124,6 +124,33 @@ class FakeText:
         )
         return validate_story_output(output, context)
 
+    def creator(self, context):
+        import json
+
+        from echoloom.creator_schemas import CreatorOutput
+
+        self.calls.append(("creator", context))
+        if self.fail:
+            raise ProviderError("Simulated creator failure")
+        frame = json.loads(context[-1]["content"])
+        cast = frame["cast"]
+        actor = next(m for m in cast if m["id"] != "player")
+        return CreatorOutput(
+            blocks=[
+                {
+                    "type": "narration",
+                    "speaker": None,
+                    "text": "Rain settles over the station.",
+                },
+                {
+                    "type": "dialogue",
+                    "speaker": actor["id"],
+                    "text": "We have a little time. What would you like to say?",
+                },
+            ],
+            suggestions=["Ask more quietly", "Let the character explain"],
+        )
+
     def chat(self, messages):
         self.calls.append(("chat", messages))
         if self.fail:

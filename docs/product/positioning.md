@@ -1,5 +1,7 @@
 # EchoLoom product positioning
 
+> 历史陪伴方向（2026-11-04）。当前主方向已切换为 Character + Interactive Story Creator；请看 [当前定位与计划](README.md) 和 [Creator PRD](creator-mobile-mvp-prd.md)。本文保留作原有陪伴功能参考。
+
 Updated: November 4, 2026. Product direction for the current companion prototype.
 
 ## Your favorite character. By your side.

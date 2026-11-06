@@ -1,11 +1,33 @@
-# EchoLoom product direction
+# EchoLoom Creator — 定位与后续计划
 
-- [Positioning](positioning.md): audience, promise, experience pillars and product language.
-- [Roadmap](roadmap.md): current baseline, next priorities, later candidates and acceptance criteria.
-- [Current walkthrough](../../demo/README.md): narrated video, chapters, sample-data disclosure and supporting files.
+更新：2026-11-06。当前主方向是 **AI Character + Interactive Story**，面向希望用人物互动探索剧情的创作者。
 
-The original research plan remains at [docs/roadmap.md](../roadmap.md).
+**Create characters. Discover their stories.**
 
-## Creator direction — draft for review
+从一个人物想法开始，同时生成设定和形象；让人物进入情境，用导演指令、对白和改写试出不同发展，保存喜欢的故事线，导出可继续写作的草稿。核心价值是人物可信、创作可控、不同路线可比较和找回。
 
-[Mobile Creator MVP PRD](creator-mobile-mvp-prd.md), revision 0.2, preserves the description → character and portrait → adjustments → Start a story flow. It defines Story/Storyline structure, automatic saving, named saved versions, branching, mobile layouts and 28 acceptance criteria. This is a review draft; implementation has not started and the existing companion app remains unchanged.
+## 当前首版
+
+- 手机优先界面，角色创建 → 档案与头像 → 调整 → Start a story。
+- Play a role / Direct the cast；旁白、动作与对白分层；继续、自由方向、手工编辑、重写与跨场景。
+- 自动保存、命名快照、分支、比较、恢复、完成与归档。
+- 人物快照、分支事实、角色知情范围与来源复核。
+- 剧本、叙事文本与结构 JSON 导出；JSON 导入为独立副本。
+- 无密钥 The Last Train 演示，明确区别于 Live AI。
+- 旧陪伴功能继续位于 `/characters`，原数据保留。
+
+[完整 PRD](creator-mobile-mvp-prd.md) · [更新和使用](creator-mvp.md) · [验证与限制](creator-validation.md)
+
+## 后续计划
+
+| 顺序 | 工作 | 判断标准 |
+| --- | --- | --- |
+| 1 | 用有权限的真实文本、图片模型完成端到端验收 | 自定义人物、头像编辑、双角色自由剧情、失败恢复均实测，记录时延与单次成本；示例与替身结果不代替模型质量 |
+| 2 | 5 位目标创作者的手机可用性测试 | 至少 4/5 可完成创建、开始、分叉、保存、返回、导出；理解自动保存、快照和分支；找出愿意继续写的具体段落 |
+| 3 | 改进人物与剧情一致性 | 建立秘密、动机、跨场景和分支隔离评审案例；根据错误决定是否加入检索式记忆与更清晰的事实建议 |
+| 4 | 打磨场景创作工作台 | 优先处理测试中出现的编辑、比较、排序和导出阻碍；再考虑章节、更多参与者和可移植头像包 |
+| 5 | 决定长期作品能力 | 有持续创作需求后再加入项目、长篇结构、云同步和协作，不让首次使用先填复杂项目表单 |
+
+本期不把约会关系等级、日历同步、认知训练、硬件或内容社区作为 Creator 的主流程。原陪伴路线保留在 [历史定位](positioning.md) 和 [历史计划](roadmap.md)，旧演示在 [demo](../../demo/README.md)。
+
+共用基础仍是持续人格、人物关系与记忆，但当前验证目标是**创作者是否能产出并继续加工一条可用故事线**，不是陪伴时长或临床效果。原研究材料见 [研究计划](../roadmap.md)。

@@ -26,6 +26,7 @@ class Base(DeclarativeBase):
 
 
 class Character(Base):
+    archived: Mapped[bool] = mapped_column(default=False, server_default="0")
     owner_id: Mapped[str | None] = mapped_column(
         ForeignKey("user_accounts.id"), default=None, index=True
     )
@@ -244,3 +245,28 @@ def allocate_timeline(session, conversation_id, count=1):
 
 # Register companion tables with the shared metadata.
 from . import companion_models  # noqa: F401
+
+
+class CreatorWork(Base):
+    __tablename__ = "creator_works"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    owner_id: Mapped[str | None] = mapped_column(
+        ForeignKey("user_accounts.id"), default=None, index=True
+    )
+    revision: Mapped[int] = mapped_column(default=0, server_default="0")
+    document: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[str] = mapped_column(default=now)
+    updated_at: Mapped[str] = mapped_column(default=now)
+
+
+class CreatorRequest(Base):
+    __tablename__ = "creator_requests"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    owner_id: Mapped[str | None] = mapped_column(
+        ForeignKey("user_accounts.id"), default=None
+    )
+    scope: Mapped[str] = mapped_column(String(80))
+    payload: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(30))
+    result: Mapped[dict | None] = mapped_column(JSON, default=None)
+    created_at: Mapped[str] = mapped_column(default=now)

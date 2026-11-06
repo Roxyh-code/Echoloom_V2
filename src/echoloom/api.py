@@ -175,6 +175,7 @@ def create_app(
             content={
                 "database_ready": ready,
                 "story_database_ready": inspect(engine).has_table("stories"),
+                "creator_database_ready": inspect(engine).has_table("creator_works"),
                 "companion_database_ready": inspect(engine).has_table(
                     "calendar_connections"
                 ),
@@ -258,6 +259,14 @@ def create_app(
     def remove(cid: UUID, db: DbSession):
         with locks.hold(str(cid)):
             c = character(db, cid)
+            from .creator_service import references
+
+            if references(factory, c.id):
+                raise HTTPException(
+                    409,
+                    "This character is used by a Creator story. Archive it instead, or delete those stories first.",
+                )
+
             files = list(
                 db.scalars(
                     select(Portrait.file_path).where(Portrait.character_id == c.id)
@@ -636,6 +645,13 @@ def create_app(
         with locks.hold(str(cid)):
             c = character(db, cid)
             item = portrait(db, cid, image_id)
+            from .creator_service import references
+
+            if references(factory, item.id):
+                raise HTTPException(
+                    409, "This portrait is pinned by a Creator story or saved version."
+                )
+
             if db.scalar(select(Story.id).where(Story.portrait_id == item.id)):
                 raise HTTPException(
                     409, "This portrait is used by a saved story and must be preserved."
@@ -663,6 +679,9 @@ def create_app(
 
     register_accounts(app, factory, locks, settings)
     register_companion(app, factory, locks, settings, calendar_provider, clock)
+    from .creator_service import register_creator
+
+    register_creator(app, factory, locks, settings, render, serialize)
     return app
 
 

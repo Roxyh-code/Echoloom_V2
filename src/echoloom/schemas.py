@@ -39,6 +39,10 @@ class Interaction(Model):
 
 
 class Profile(Model):
+    wants: str = Field(default="", max_length=300)
+    why_it_matters: str = Field(default="", max_length=500)
+    fear: str = Field(default="", max_length=300)
+    private_information: str = Field(default="", max_length=500)
     name: str = Field(min_length=1, max_length=100)
     short_description: Short = ""
     appearance: Appearance = Field(default_factory=Appearance)
@@ -84,6 +88,7 @@ class ImageInput(Model):
 
 # Only explicit leaf paths can be changed by the refinement model.
 PATCH_PATHS = {
+    "wants", "why_it_matters", "fear", "private_information",
     "name",
     "short_description",
     "backstory",

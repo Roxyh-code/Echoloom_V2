@@ -1,4 +1,8 @@
 export type Profile = {
+  wants: string;
+  why_it_matters: string;
+  fear: string;
+  private_information: string;
   name: string;
   short_description: string;
   backstory: string;
@@ -50,6 +54,7 @@ export type Revision = {
   profile: Profile;
 };
 export type Health = {
+  creator_database_ready?: boolean;
   text_configured: boolean;
   image_configured: boolean;
   max_profile_input_chars: number;

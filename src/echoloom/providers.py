@@ -11,6 +11,7 @@ from openai import APIStatusError, OpenAI, OpenAIError
 from pydantic import ValidationError
 
 from .config import Settings
+from .creator_schemas import CreatorOutput
 from .schemas import PATCH_PATHS, Profile, Refinement
 from .story_context import validate_story_output
 from .story_schemas import StoryOutput
@@ -144,7 +145,7 @@ class OpenAIText:
                     model=s.llm_model,
                     messages=messages,
                     max_completion_tokens=s.story_max_output_tokens
-                    if schema is StoryOutput
+                    if schema in (StoryOutput, CreatorOutput)
                     else s.max_output_tokens,
                     **({"response_format": {"type": "json_object"}} if schema else {}),
                 )
@@ -259,6 +260,24 @@ class OpenAIText:
             ],
             Refinement,
         )
+
+    def creator(self, context):
+        output = self._request(context, CreatorOutput)
+        names = []
+        try:
+            names = [
+                m["profile"]["name"] for m in json.loads(context[-1]["content"])["cast"]
+            ]
+        except (KeyError, ValueError, TypeError):
+            pass
+        text = " ".join(b.text for b in output.blocks)
+        for name in names:
+            text = text.replace(name, "")
+        if re.search(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]", text):
+            raise ProviderError(
+                "The model did not return an English scene. Your previous draft is safe."
+            )
+        return output
 
     def chat(self, messages):
         reply = self._request(messages)

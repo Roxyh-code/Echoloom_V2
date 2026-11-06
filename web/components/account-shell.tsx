@@ -94,7 +94,13 @@ export function AccountForm({
     </form>
   );
 }
-export function AccountShell({ children }: { children: React.ReactNode }) {
+export function AccountShell({
+  children,
+  hideStatus = false,
+}: {
+  children: React.ReactNode;
+  hideStatus?: boolean;
+}) {
   const [account, setAccount] = useState<AccountState | null>(null);
   useEffect(() => {
     const refresh = () => {
@@ -118,7 +124,7 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
     );
   return (
     <>
-      {account?.authenticated && (
+      {account?.authenticated && !hideStatus && (
         <div className="account-status">
           <span>Local account: {account.username}</span>
           <button
