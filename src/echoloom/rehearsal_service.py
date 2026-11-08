@@ -3,6 +3,7 @@
 import json
 import re
 from copy import deepcopy
+from pathlib import Path
 from threading import Thread, Timer
 from uuid import UUID
 
@@ -49,6 +50,10 @@ from .rehearsal_schema import (
     StateChange,
 )
 from .schemas import Profile
+
+from langgraph.checkpoint.sqlite import SqliteSaver
+
+from .rehearsal_graph import build_rehearsal_graph
 
 ACTIVE = ("queued", "running", "stopping")
 TERMINAL = ("completed", "cancelled", "failed")
@@ -221,14 +226,93 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                 doc = deepcopy(row.document)
                 v = version(doc, job.result["version_id"])
                 request_event = job.result["generation"]
+                checkpoint_thread = job.result.get("checkpoint_thread_id", str(jid))
                 db.commit()
             # No scene lock during the provider call: pause and historical reading remain available.
-            output = (
-                demo_performance(doc, v, request_event)
-                if doc["demo"]
-                else app.state.text.rehearsal(context(doc, v, request_event, settings))
-            )
+            if doc["demo"]:
+                output = demo_performance(doc, v, request_event)
+            else:
+                checkpoint_dir = (
+                    Path(__file__).resolve().parents[2] / "work"
+                )
+                checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+                checkpoint_path = (
+                    checkpoint_dir / "rehearsal-checkpoints.sqlite"
+                )
+
+                # Keep the connection open for the entire graph execution.
+                # It closes when this with block exits.
+                with SqliteSaver.from_conn_string(
+                    str(checkpoint_path)
+                ) as checkpointer:
+                    graph = build_rehearsal_graph(
+                        text_provider=app.state.text,
+                        settings=settings,
+                        checkpointer=checkpointer,
+                    )
+
+                    initial_state = {
+                        "document": doc,
+                        "scene_version": v,
+                        "request_event": request_event,
+                    }
+
+                    # A retry gets a new operation ID, but may resume the original
+                    # graph thread. Reuse only an identical, uncommitted input.
+                    config = {
+                        "configurable": {"thread_id": checkpoint_thread}
+                    }
+                    snapshot = graph.get_state(config)
+                    reusable = bool(snapshot.values) and all(
+                        snapshot.values.get(key) == value
+                        for key, value in initial_state.items()
+                    )
+                    if not reusable:
+                        checkpoint_thread = str(jid)
+                        config = {
+                            "configurable": {"thread_id": checkpoint_thread}
+                        }
+                        # Never overwrite an existing incompatible attempt.
+                        current = graph.get_state(config)
+                        if current.values:
+                            raise ProviderError(
+                                "This task's checkpoint no longer matches the scene. "
+                                "Retry as a new operation."
+                            )
+
+                    # Persist the selected thread BEFORE executing the graph so
+                    # another retry can find it even after a process crash.
+                    with locks.hold("rehearsal:" + sid), factory() as db:
+                        current_job = db.get(RehearsalOperation, jid)
+                        if not current_job or current_job.status not in ACTIVE:
+                            return
+                        current_job.result = deepcopy(current_job.result) | {
+                            "checkpoint_thread_id": checkpoint_thread,
+                            "checkpoint_mode": "resumed" if reusable else "new",
+                        }
+                        db.commit()
+
+                    if reusable and not snapshot.next:
+                        # The graph completed; only the application commit failed.
+                        if "performance" not in snapshot.values:
+                            raise ProviderError(
+                                "The saved generation has no complete result."
+                            )
+                        result = snapshot.values
+                    else:
+                        # None resumes pending work. Passing initial_state again
+                        # would start another execution instead of resuming it.
+                        result = graph.invoke(
+                            None if reusable else initial_state,
+                            config=config,
+                            durability="sync",
+                        )
+
+                    output = result["performance"]
+
             output = validate_performance(output, doc, v)
+
             if output.conflicts:
                 raise ProviderError(
                     "This direction conflicts with a locked rule: "
@@ -923,6 +1007,13 @@ def register_rehearsal(app, factory, locks, settings, serialize):
             no_job(db, sid)
             if j.status != "failed":
                 return {"job_id": j.id, "status": j.status}
+            # A timed-out provider call may still be executing in this process.
+            # Wait for it to exit before a retry touches its checkpoint thread.
+            if j.id in running:
+                raise HTTPException(
+                    409,
+                    "The previous generation is still stopping. Retry shortly.",
+                )
             d = deepcopy(row.document)
             v = version(d, j.result["version_id"])
             v, _ = reading_base(d, v, str(oid))
@@ -931,6 +1022,26 @@ def register_rehearsal(app, factory, locks, settings, serialize):
             result = deepcopy(j.result)
             result["version_id"] = v["id"]
             result["events"] = []
+            committed_blocks = any(
+                e.get("type") == "block" for e in j.result.get("events", [])
+            ) or any(
+                n.get("operation_id") == j.id
+                and n.get("source") in ("ai", "demo")
+                for n in d["nodes"].values()
+            )
+            if (
+                not committed_blocks
+                and v["head"] == result["base_node_id"]
+                and not d["demo"]
+            ):
+                result["checkpoint_thread_id"] = j.result.get(
+                    "checkpoint_thread_id", j.id
+                )
+            else:
+                # Existing continuation logic handles partially committed text.
+                # Do not append the original complete performance a second time.
+                result.pop("checkpoint_thread_id", None)
+            result.pop("checkpoint_mode", None)
             if v["head"] != result["base_node_id"]:
                 result["generation"] = {
                     "kind": "continue",
