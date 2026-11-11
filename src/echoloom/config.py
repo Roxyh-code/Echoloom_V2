@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -26,6 +27,16 @@ class Settings(BaseSettings):
     # Off by default for baseline comparison and existing deployments.
     rehearsal_consistency_enabled: bool = False
     rehearsal_quality_timeout_seconds: float = Field(150, ge=60, le=300)
+
+    # Optional rehearsal experiment. No Mem0 import, files or API calls when off.
+    memory_enabled: bool = False
+    memory_directory: Path = Path("work/memory")
+    memory_llm_model: str = "gpt-4.1-mini"
+    memory_embedding_model: Literal["text-embedding-3-small"] = "text-embedding-3-small"
+    memory_top_k: int = Field(5, ge=1, le=20)
+    memory_context_bytes: int = Field(3000, ge=500, le=12000)
+    memory_timeout_seconds: float = Field(15, ge=1, le=60)
+    memory_index_batch_size: int = Field(4, ge=1, le=20)
 
     app_origin: str = "http://127.0.0.1:3000"
     google_client_id: str = ""

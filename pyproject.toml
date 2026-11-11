@@ -15,6 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "httpx>=0.28,<1", "ruff>=0.17,<1"]
+memory = ["mem0ai==2.2.1"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

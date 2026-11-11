@@ -2,6 +2,7 @@
 
 import json
 import re
+from contextlib import asynccontextmanager
 from copy import deepcopy
 from pathlib import Path
 from threading import Thread, Timer
@@ -60,6 +61,23 @@ TERMINAL = ("completed", "cancelled", "failed")
 def register_rehearsal(app, factory, locks, settings, serialize):
     running = set()
     app.state.rehearsal_running = running
+    memory = None
+    if settings.memory_enabled:
+        from .rehearsal_memory import RehearsalMemory
+
+        memory = RehearsalMemory(settings)
+        previous_lifespan = app.router.lifespan_context
+
+        @asynccontextmanager
+        async def lifespan(application):
+            async with previous_lifespan(application):
+                try:
+                    yield
+                finally:
+                    memory.close()
+
+        app.router.lifespan_context = lifespan
+    app.state.rehearsal_memory = memory
 
     def own(db, sid, owner):
         row = db.get(RehearsalScene, str(sid))
@@ -216,6 +234,8 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                 if settings.rehearsal_consistency_enabled
                 else 60
             )
+            if memory is not None:
+                timeout_seconds += settings.memory_timeout_seconds
             timer = Timer(timeout_seconds, timeout)
             timer.daemon = True
             timer.start()
@@ -230,6 +250,7 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                 v = version(doc, job.result["version_id"])
                 request_event = job.result["generation"]
                 checkpoint_thread = job.result.get("checkpoint_thread_id", str(jid))
+                owner = job.owner_id
                 db.commit()
             # No scene lock during the provider call: pause and historical reading remain available.
             if doc["demo"]:
@@ -247,6 +268,7 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                         text_provider=app.state.text,
                         settings=settings,
                         checkpointer=checkpointer,
+                        memory=memory,
                     )
 
                     initial_state = {
@@ -254,6 +276,16 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                         "scene_version": v,
                         "request_event": request_event,
                     }
+                    if memory is not None:
+                        initial_state["memory_experiment"] = {
+                            "owner": owner,
+                            "scene": sid,
+                            "llm": settings.memory_llm_model,
+                            "embedding": settings.memory_embedding_model,
+                            "top_k": settings.memory_top_k,
+                            "context_bytes": settings.memory_context_bytes,
+                            "directory": str(settings.memory_directory.resolve()),
+                        }
 
                     # A retry gets a new operation ID, but may resume the original
                     # graph thread. Reuse only an identical, uncommitted input.
@@ -263,6 +295,8 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                         snapshot.values.get(key) == value
                         for key, value in initial_state.items()
                     )
+                    if memory is None and snapshot.values.get("memory_experiment"):
+                        reusable = False
                     if not reusable:
                         checkpoint_thread = str(jid)
                         config = {"configurable": {"thread_id": checkpoint_thread}}
@@ -303,6 +337,16 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                         )
 
                     output = result["performance"]
+                    with locks.hold("rehearsal:" + sid), factory() as db:
+                        current_job = db.get(RehearsalOperation, jid)
+                        if current_job:
+                            current_job.result = deepcopy(current_job.result) | {
+                                "memory": result.get(
+                                    "memory_context",
+                                    {"status": "disabled", "items": []},
+                                )
+                            }
+                            db.commit()
 
             output = validate_performance(output, doc, v)
 
@@ -368,6 +412,8 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                     save(row, d)
                     event(job, "block", block_id=b["id"], node_id=node_id, block=b)
                     db.commit()
+                if memory is not None and not doc["demo"]:
+                    memory.schedule(d, target, owner, sid)
             with locks.hold("rehearsal:" + sid), factory() as db:
                 job = db.get(RehearsalOperation, jid)
                 if job and job.status in ACTIVE:
@@ -965,6 +1011,7 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                     e for e in j.result.get("events", []) if e["sequence"] > after
                 ],
                 "scene": pack(row),
+                "memory": j.result.get("memory", {"status": "disabled", "items": []}),
             }
 
     @app.post("/api/rehearsal/jobs/{oid}/pause")

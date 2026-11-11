@@ -9,6 +9,7 @@ A mobile scene rehearsal studio for fiction creators. Choose two characters, des
 - **[Windows update and rehearsal walkthrough](docs/product/scene-rehearsal.md)** — stop both services, back up `work`, pull, run migration **0005**, restart.
 - [User-provided rehearsal PRD](docs/product/scene-rehearsal-prd.md) · [Current positioning and next steps](docs/product/README.md)
 - [First installation and model configuration](docs/mvp/README.md)
+- [Optional Mem0 rehearsal memory experiment](docs/mvp/rehearsal-memory.md) — default off; local storage, source/actor isolation, setup and A/B diagnostics.
 
 Try **The station reunion · Demo** without model keys. It is clearly labeled and uses prepared performances; saving, versions, exports and source-linked next scenes really persist. Custom rehearsals use your server's text model. Actual model quality, costs and physical-phone behavior still need separate validation.
 

@@ -23,6 +23,8 @@ class RehearsalState(TypedDict, total=False):
     consistency_review: dict[str, Any]
     repair_attempts: int
     quality_status: str
+    memory_experiment: dict[str, Any]
+    memory_context: dict[str, Any]
 
 
 def _strings(value):
@@ -37,7 +39,7 @@ def _strings(value):
             yield from _strings(item)
 
 
-def build_rehearsal_graph(text_provider, settings, checkpointer):
+def build_rehearsal_graph(text_provider, settings, checkpointer, memory=None):
     def check_budget(messages):
         used = sum(len(m["content"].encode("utf-8")) + 16 for m in messages)
         budget = (
@@ -50,19 +52,39 @@ def build_rehearsal_graph(text_provider, settings, checkpointer):
             )
 
     def prepare_context(state: RehearsalState):
+        memories = state.get("memory_context", {}).get("items", [])
+        messages = context(
+            state["document"],
+            state["scene_version"],
+            state["request_event"],
+            settings,
+            memories=memories,
+        )
+        used = json.loads(messages[-1]["content"]).get("memories", [])
         return {
-            "messages": context(
-                state["document"],
-                state["scene_version"],
-                state["request_event"],
-                settings,
-            ),
+            "messages": messages,
+            "memory_context": state.get(
+                "memory_context", {"status": "disabled", "items": []}
+            )
+            | {"used_ids": [m["id"] for m in used]},
             "quality_enabled": settings.rehearsal_consistency_enabled,
             "consistency_review": {"issues": []},
             "repair_attempts": 0,
             "quality_status": "pending"
             if settings.rehearsal_consistency_enabled
             else "disabled",
+        }
+
+    def retrieve_memory(state: RehearsalState):
+        scope = state["memory_experiment"]
+        return {
+            "memory_context": memory.lookup(
+                state["document"],
+                state["scene_version"],
+                scope["owner"],
+                scope["scene"],
+                state["request_event"],
+            )
         }
 
     def generate_performance(state: RehearsalState):
@@ -222,7 +244,12 @@ def build_rehearsal_graph(text_provider, settings, checkpointer):
     builder.add_node("validate_output", validate_output)
     builder.add_node("review_consistency", review_consistency)
     builder.add_node("repair_performance", repair_performance)
-    builder.add_edge(START, "prepare_context")
+    if memory is not None:
+        builder.add_node("retrieve_memory", retrieve_memory)
+        builder.add_edge(START, "retrieve_memory")
+        builder.add_edge("retrieve_memory", "prepare_context")
+    else:
+        builder.add_edge(START, "prepare_context")
     builder.add_edge("prepare_context", "generate_performance")
     builder.add_edge("generate_performance", "validate_output")
     builder.add_conditional_edges(
