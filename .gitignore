@@ -42,3 +42,7 @@ Thumbs.db
 /web/playwright-report/
 /web/test-results/
 /web/*.tsbuildinfo
+
+# Local backups (may contain secrets and databases)
+*-backup-*/
+*-backup-*.py
