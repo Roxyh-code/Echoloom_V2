@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     story_max_output_tokens: int = Field(3500, ge=1000, le=8000)
     story_max_context_tokens: int = Field(24000, ge=6000, le=64000)
 
+    # Off by default for baseline comparison and existing deployments.
+    rehearsal_consistency_enabled: bool = False
+    rehearsal_quality_timeout_seconds: float = Field(150, ge=60, le=300)
+
     app_origin: str = "http://127.0.0.1:3000"
     google_client_id: str = ""
     google_client_secret: SecretStr = SecretStr("")

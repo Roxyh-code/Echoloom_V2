@@ -24,7 +24,9 @@ class ProviderError(Exception):
 
 
 class InvalidModelOutput(ProviderError):
-    pass
+    def __init__(self, message, validation_errors=None):
+        super().__init__(message)
+        self.validation_errors = validation_errors or []
 
 
 class ProviderUnavailable(ProviderError):
@@ -122,7 +124,7 @@ class OpenAIText:
     def __init__(self, settings: Settings):
         self.settings = settings
 
-    def _request(self, messages, schema=None):
+    def _request(self, messages, schema=None, *, max_retries=1):
         s = self.settings
         if (
             s.llm_provider != "openai"
@@ -139,7 +141,7 @@ class OpenAIText:
             with OpenAI(
                 api_key=s.llm_api_key.get_secret_value(),
                 timeout=s.api_timeout_seconds,
-                max_retries=1,
+                max_retries=max_retries,
             ) as client:
                 response = client.chat.completions.create(
                     model=s.llm_model,
@@ -177,7 +179,48 @@ class OpenAIText:
                 response.usage.total_tokens if response.usage else None,
             )
             return result
-        except (ValidationError, IndexError, ValueError) as exc:
+        except ValidationError as exc:
+            # Keep only schema locations and machine-readable error codes.
+            # Never log generated text, field values or Pydantic error messages.
+            fields = {
+                "blocks",
+                "changes",
+                "conflicts",
+                "ending",
+                "type",
+                "character_id",
+                "text",
+                "after_block",
+                "known_by",
+                "kind",
+                "issues",
+                "block_index",
+                "evidence",
+                "rule_quote",
+                "explanation",
+                "suggested_fix",
+            }
+            errors = [
+                {
+                    "loc": [
+                        x if isinstance(x, int) or x in fields else "<field>"
+                        for x in item["loc"]
+                    ],
+                    "type": item["type"],
+                }
+                for item in exc.errors(
+                    include_input=False, include_context=False, include_url=False
+                )[:12]
+            ]
+            logger.warning(
+                "provider=openai kind=%s success=false error_type=ValidationError schema_errors=%s",
+                schema.__name__ if schema else "text",
+                json.dumps(errors),
+            )
+            raise InvalidModelOutput(
+                "The model returned invalid structured output.", errors
+            ) from None
+        except (IndexError, ValueError) as exc:
             logger.warning(
                 "provider=openai kind=text success=false error_type=%s",
                 type(exc).__name__,
@@ -301,6 +344,49 @@ class OpenAIText:
                         + ". Narration uses null. Do not perform the taken-over actor. Do not invent an actor or a fact.",
                     }
                 ]
+
+    def rehearsal_once(self, context):
+        """One workflow step with at most one structured-output correction."""
+        from .rehearsal_schema import Performance
+
+        try:
+            return self._request(context, Performance, max_retries=0)
+        except InvalidModelOutput as first:
+            logger.warning(
+                "provider=openai kind=rehearsal_format correction_attempt=1 schema_errors=%s",
+                json.dumps(first.validation_errors),
+            )
+            correction = {
+                "role": "system",
+                "content": (
+                    "The previous response failed structured-output validation. "
+                    "Return one complete JSON object only, without Markdown fences, "
+                    "comments or surrounding prose. Follow this schema exactly: "
+                    + json.dumps(Performance.model_json_schema())
+                    + ". Respect all required fields, types, enum values, and limits. "
+                    "Use at most 8 blocks and 12 changes. Each block text must fit "
+                    "its length limit. character_id is a cast ID, never an object. "
+                    "Narration uses null; action/dialogue use the bound cast ID. "
+                    "known_by is an array of cast ID strings. after_block is a valid "
+                    "zero-based block index. Keep the original language, author "
+                    "intent, actor knowledge, takeover and any local-repair boundaries. "
+                    "Do not add unrelated events or actors. Validation locations/codes: "
+                    + json.dumps(first.validation_errors)
+                ),
+            }
+            try:
+                return self._request([*context, correction], Performance, max_retries=0)
+            except InvalidModelOutput as second:
+                raise InvalidModelOutput(
+                    "The model returned invalid scene data after one format correction. "
+                    "Your saved scene is safe; retry explicitly.",
+                    second.validation_errors,
+                ) from None
+
+    def rehearsal_consistency(self, context):
+        from .rehearsal_schema import ConsistencyReview
+
+        return self._request(context, ConsistencyReview, max_retries=0)
 
     def rehearsal_directions(self, context):
         from .rehearsal_schema import Directions

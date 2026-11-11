@@ -140,3 +140,19 @@ class ExportOptions(Model):
     format: Literal["txt", "md"] = "txt"
     include_title: bool = True
     include_names: bool = True
+
+
+class ConsistencyIssue(Model):
+    block_index: int = Field(ge=0, le=7)
+    kind: Literal[
+        "knowledge", "hard_rule", "continuity", "author_direction", "character"
+    ]
+    evidence: str = Field(min_length=1, max_length=500)
+    rule_quote: str = Field(min_length=1, max_length=500)
+    explanation: str = Field(min_length=1, max_length=600)
+    suggested_fix: str = Field(min_length=1, max_length=600)
+
+
+class ConsistencyReview(Model):
+    # Empty issues means no supported issue was found, not guaranteed correctness.
+    issues: list[ConsistencyIssue] = Field(default_factory=list, max_length=5)

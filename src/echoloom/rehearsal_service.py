@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, Request
 from fastapi.responses import Response
+from langgraph.checkpoint.sqlite import SqliteSaver
 from sqlalchemy import select
 
 from .db import (
@@ -39,6 +40,7 @@ from .rehearsal_domain import (
     validate_performance,
     version,
 )
+from .rehearsal_graph import build_rehearsal_graph
 from .rehearsal_schema import (
     Block,
     Command,
@@ -50,10 +52,6 @@ from .rehearsal_schema import (
     StateChange,
 )
 from .schemas import Profile
-
-from langgraph.checkpoint.sqlite import SqliteSaver
-
-from .rehearsal_graph import build_rehearsal_graph
 
 ACTIVE = ("queued", "running", "stopping")
 TERMINAL = ("completed", "cancelled", "failed")
@@ -213,7 +211,12 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                         )
                         db.commit()
 
-            timer = Timer(60, timeout)
+            timeout_seconds = (
+                settings.rehearsal_quality_timeout_seconds
+                if settings.rehearsal_consistency_enabled
+                else 60
+            )
+            timer = Timer(timeout_seconds, timeout)
             timer.daemon = True
             timer.start()
             with locks.hold("rehearsal:" + sid), factory() as db:
@@ -232,20 +235,14 @@ def register_rehearsal(app, factory, locks, settings, serialize):
             if doc["demo"]:
                 output = demo_performance(doc, v, request_event)
             else:
-                checkpoint_dir = (
-                    Path(__file__).resolve().parents[2] / "work"
-                )
+                checkpoint_dir = Path(__file__).resolve().parents[2] / "work"
                 checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-                checkpoint_path = (
-                    checkpoint_dir / "rehearsal-checkpoints.sqlite"
-                )
+                checkpoint_path = checkpoint_dir / "rehearsal-checkpoints.sqlite"
 
                 # Keep the connection open for the entire graph execution.
                 # It closes when this with block exits.
-                with SqliteSaver.from_conn_string(
-                    str(checkpoint_path)
-                ) as checkpointer:
+                with SqliteSaver.from_conn_string(str(checkpoint_path)) as checkpointer:
                     graph = build_rehearsal_graph(
                         text_provider=app.state.text,
                         settings=settings,
@@ -260,9 +257,7 @@ def register_rehearsal(app, factory, locks, settings, serialize):
 
                     # A retry gets a new operation ID, but may resume the original
                     # graph thread. Reuse only an identical, uncommitted input.
-                    config = {
-                        "configurable": {"thread_id": checkpoint_thread}
-                    }
+                    config = {"configurable": {"thread_id": checkpoint_thread}}
                     snapshot = graph.get_state(config)
                     reusable = bool(snapshot.values) and all(
                         snapshot.values.get(key) == value
@@ -270,9 +265,7 @@ def register_rehearsal(app, factory, locks, settings, serialize):
                     )
                     if not reusable:
                         checkpoint_thread = str(jid)
-                        config = {
-                            "configurable": {"thread_id": checkpoint_thread}
-                        }
+                        config = {"configurable": {"thread_id": checkpoint_thread}}
                         # Never overwrite an existing incompatible attempt.
                         current = graph.get_state(config)
                         if current.values:
@@ -1025,8 +1018,7 @@ def register_rehearsal(app, factory, locks, settings, serialize):
             committed_blocks = any(
                 e.get("type") == "block" for e in j.result.get("events", [])
             ) or any(
-                n.get("operation_id") == j.id
-                and n.get("source") in ("ai", "demo")
+                n.get("operation_id") == j.id and n.get("source") in ("ai", "demo")
                 for n in d["nodes"].values()
             )
             if (
