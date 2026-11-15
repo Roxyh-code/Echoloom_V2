@@ -1,0 +1,257 @@
+[
+  {
+    "id": "Q01",
+    "category": "fact",
+    "question": "What should you call me?",
+    "expected": "A-Che, not Little Lin",
+    "weight": 1,
+    "hints": [
+      [
+        "a-che",
+        "ah che",
+        "ache",
+        "阿澈"
+      ]
+    ]
+  },
+  {
+    "id": "Q02",
+    "category": "fact",
+    "question": "What is my cat's name?",
+    "expected": "Chestnut",
+    "weight": 1,
+    "hints": [
+      [
+        "chestnut",
+        "栗子"
+      ]
+    ]
+  },
+  {
+    "id": "Q03",
+    "category": "temporal",
+    "question": "Where do I live now, and where did I live before?",
+    "expected": "Victoria now; Vancouver before",
+    "weight": 2,
+    "hints": [
+      [
+        "victoria",
+        "维多利亚"
+      ],
+      [
+        "vancouver",
+        "温哥华"
+      ]
+    ]
+  },
+  {
+    "id": "Q04",
+    "category": "temporal",
+    "question": "Is Chestnut still afraid of vacuum cleaners?",
+    "expected": "No; used to be, after desensitization",
+    "weight": 2,
+    "hints": [
+      [
+        "no longer",
+        "not afraid",
+        "isn't afraid",
+        "not scared",
+        "不怕",
+        "overcome",
+        "comfortable"
+      ]
+    ]
+  },
+  {
+    "id": "Q05",
+    "category": "episodic",
+    "question": "What small moment made me happy at my first pottery market?",
+    "expected": "Girl said blue star cup looked like night sky",
+    "weight": 2,
+    "hints": [
+      [
+        "girl",
+        "女孩"
+      ],
+      [
+        "star",
+        "星星"
+      ],
+      [
+        "night sky",
+        "夜空",
+        "sky"
+      ]
+    ]
+  },
+  {
+    "id": "Q06",
+    "category": "episodic",
+    "question": "What did I forget at the pottery market and what did I use instead?",
+    "expected": "Price tags replaced with sticky notes",
+    "weight": 2,
+    "hints": [
+      [
+        "price tag",
+        "价签",
+        "price label"
+      ],
+      [
+        "sticky note",
+        "便签"
+      ]
+    ]
+  },
+  {
+    "id": "Q07",
+    "category": "preference",
+    "question": "What kind of gathering would I enjoy?",
+    "expected": "Quiet with two or three close friends",
+    "weight": 2,
+    "hints": [
+      [
+        "quiet",
+        "安静",
+        "small",
+        "intimate"
+      ],
+      [
+        "friend",
+        "朋友"
+      ]
+    ]
+  },
+  {
+    "id": "Q08",
+    "category": "preference",
+    "question": "What is most important to me about making pottery?",
+    "expected": "Enjoyment, not stressful business",
+    "weight": 2,
+    "hints": [
+      [
+        "enjoy",
+        "happy",
+        "fun",
+        "开心",
+        "乐趣"
+      ],
+      [
+        "stress",
+        "pressure",
+        "business",
+        "生意",
+        "压力"
+      ]
+    ]
+  },
+  {
+    "id": "Q09",
+    "category": "entity",
+    "question": "What are my and Xiaoyu's favorite colors, respectively?",
+    "expected": "User blue; Xiaoyu green",
+    "weight": 2,
+    "hints": [
+      [
+        "blue",
+        "蓝"
+      ],
+      [
+        "green",
+        "绿"
+      ]
+    ]
+  },
+  {
+    "id": "Q10",
+    "category": "entity",
+    "question": "Who dislikes gold decorations?",
+    "expected": "Xiaoyu",
+    "weight": 2,
+    "hints": [
+      [
+        "xiaoyu",
+        "小雨"
+      ]
+    ]
+  },
+  {
+    "id": "Q11",
+    "category": "application",
+    "question": "What should you remind me to bring to my next pottery market, based on last time?",
+    "expected": "Price tags",
+    "weight": 2,
+    "hints": [
+      [
+        "price tag",
+        "price label",
+        "价签"
+      ]
+    ]
+  },
+  {
+    "id": "Q12",
+    "category": "application",
+    "question": "What drink should you get me, and why?",
+    "expected": "Caffeine-free herbal tea because coffee disrupts sleep",
+    "weight": 2,
+    "hints": [
+      [
+        "tea",
+        "花草茶"
+      ],
+      [
+        "sleep",
+        "insomnia",
+        "awake",
+        "失眠",
+        "caffeine"
+      ]
+    ]
+  },
+  {
+    "id": "Q13",
+    "category": "unknown",
+    "question": "What was my major at university?",
+    "expected": "Unknown; not provided",
+    "weight": 2,
+    "hints": []
+  },
+  {
+    "id": "Q14",
+    "category": "unknown",
+    "question": "What exact calendar date is Xiaoyu's birthday?",
+    "expected": "Unknown; only next month stated",
+    "weight": 2,
+    "hints": []
+  },
+  {
+    "id": "Q15",
+    "category": "cross_session",
+    "question": "Tell me about my first pottery market and how I feel about the next one.",
+    "expected": "Sold three cups, praise of blue star cup, lost tags; prioritize enjoyment over sales",
+    "weight": 3,
+    "hints": [
+      [
+        "three",
+        "3",
+        "三"
+      ],
+      [
+        "star",
+        "星星"
+      ],
+      [
+        "price tag",
+        "价签",
+        "sticky note"
+      ],
+      [
+        "enjoy",
+        "fun",
+        "开心",
+        "pressure",
+        "stress"
+      ]
+    ]
+  }
+]

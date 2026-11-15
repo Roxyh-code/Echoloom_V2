@@ -1,0 +1,49 @@
+{
+  "benchmark": "Echoloom Memory A/B 1.0",
+  "language": "en",
+  "fictional": true,
+  "sessions": [
+    {
+      "id": "S01",
+      "user_messages": [
+        "My name is Lin Che, and my friends call me A-Che. I live in Vancouver and I am learning pottery.",
+        "I have an orange cat called Chestnut. He is afraid of vacuum cleaners."
+      ]
+    },
+    {
+      "id": "S02",
+      "user_messages": [
+        "Please call me A-Che, not Little Lin. Coffee keeps me awake, so I prefer caffeine-free herbal tea.",
+        "Next Saturday I'll attend my first pottery market. I'm nervous."
+      ]
+    },
+    {
+      "id": "S03",
+      "user_messages": [
+        "My first pottery market is over! I only sold three cups, but a little girl said my blue star cup looked like the night sky, which made me very happy.",
+        "I forgot my handwritten price tags at home and used sticky notes instead."
+      ]
+    },
+    {
+      "id": "S04",
+      "user_messages": [
+        "I moved from Vancouver to Victoria. I live in Victoria now, so please don't say I still live in Vancouver.",
+        "Chestnut is no longer scared of the vacuum cleaner after gradual desensitization training."
+      ]
+    },
+    {
+      "id": "S05",
+      "user_messages": [
+        "Big parties have exhausted me lately. I prefer quiet conversations with two or three close friends rather than crowds.",
+        "I plan to attend another pottery market, but I want pottery to stay enjoyable, not become stressful business."
+      ]
+    },
+    {
+      "id": "S06",
+      "user_messages": [
+        "Next month I will make a birthday cup for my friend Xiaoyu. She likes green and dislikes gold decorations. Those are her preferences, not mine.",
+        "My own favorite color is blue."
+      ]
+    }
+  ]
+}
