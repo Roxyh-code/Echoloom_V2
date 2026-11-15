@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     memory_timeout_seconds: float = Field(15, ge=1, le=60)
     memory_index_batch_size: int = Field(4, ge=1, le=20)
 
+    # Independent, off-by-default Character Chat memory experiment.
+    chat_memory_enabled: bool = False
+    chat_memory_directory: Path = Path("work/chat-memory")
+    chat_memory_context_bytes: int = Field(2400, ge=300, le=12000)
+    chat_memory_backfill_limit: int = Field(50, ge=0, le=2000)
+
     app_origin: str = "http://127.0.0.1:3000"
     google_client_id: str = ""
     google_client_secret: SecretStr = SecretStr("")

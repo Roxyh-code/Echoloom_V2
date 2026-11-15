@@ -124,6 +124,22 @@ def filler(i):
             'Explain one general method for counting them. Please do not discuss my personal life.')
 
 
+def wait_for_chat_index(client, cid, timeout):
+    """Do not evaluate Mem0 ON before committed user turns are indexed."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        status = client.get(f'/api/characters/{cid}/memory/status')
+        if not status.get('enabled'):
+            raise APIError('Chat memory is OFF; set CHAT_MEMORY_ENABLED=true and restart backend')
+        if status.get('failed_turns', 0):
+            raise APIError(f'Memory indexing failed for {status["failed_turns"]} turn(s)')
+        if status.get('pending_turns', 0) == 0 and not status.get('indexing', False):
+            print(f'  Chat Mem0 indexed: {status.get("ready_turns", 0)} turns', flush=True)
+            return
+        time.sleep(1)
+    raise APIError('Chat memory indexing still pending; increase --chat-memory-wait')
+
+
 def chat_test(client,args,out):
     seed=json.loads((HERE/'seed_en.json').read_text(encoding='utf-8'))
     qs=json.loads((HERE/'questions_en.json').read_text(encoding='utf-8'))
@@ -142,6 +158,8 @@ def chat_test(client,args,out):
         for i in range(args.filler_turns):
             send(client,conversation,filler(i))
             if (i+1)%20==0:print(f'  filler turns {i+1}/{args.filler_turns}',flush=True)
+    if args.wait_for_chat_memory:
+        wait_for_chat_index(client, cid, args.chat_memory_wait)
     rows=[]
     for condition in args.chat_conditions.split(','):
         if condition not in ('same','fresh'):raise ValueError('chat conditions must be same,fresh')
@@ -262,6 +280,8 @@ def main():
                    help='same seed thread or separate conversation per session')
     p.add_argument('--chat-conditions',default='same,fresh',help='comma-separated: same,fresh')
     p.add_argument('--filler-turns',type=int,default=0,help='extra distractor user turns; each incurs a model call')
+    p.add_argument('--wait-for-chat-memory',action='store_true',help='wait for asynchronous Mem0 indexing after chat seed')
+    p.add_argument('--chat-memory-wait',type=int,default=600,help='maximum wait for chat memory indexing in seconds')
     p.add_argument('--job-timeout',type=int,default=300)
     p.add_argument('--poll-interval',type=float,default=1.0)
     p.add_argument('--timeout',type=int,default=180)

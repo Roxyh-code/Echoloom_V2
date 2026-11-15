@@ -92,6 +92,12 @@ def create_app(
     app.state.text = text_provider or OpenAIText(settings)
     app.state.images = image_provider or OpenAIImages(settings)
     app.state.settings = settings
+    chat_memory = None
+    if settings.chat_memory_enabled:
+        from .chat_memory import ChatMemory
+
+        chat_memory = ChatMemory(settings, factory)
+    app.state.chat_memory = chat_memory
 
     def get_db():
         with factory() as session:
@@ -245,6 +251,14 @@ def create_app(
             db.commit()
             return serialize(db, c)
 
+    @app.get("/api/characters/{cid}/memory/status")
+    def character_memory_status(cid: UUID, db: DbSession):
+        c = character(db, cid)
+        if not chat_memory:
+            return {"enabled": False, "ready_turns": 0,
+                    "pending_turns": 0, "failed_turns": 0}
+        return chat_memory.status(c.owner_id, c.id)
+
     @app.get("/api/characters/{cid}")
     def get_character(cid: UUID, db: DbSession):
         return serialize(db, character(db, cid))
@@ -276,8 +290,11 @@ def create_app(
                     select(Portrait.file_path).where(Portrait.character_id == c.id)
                 )
             )
+            owner_id, character_id = c.owner_id, c.id
             db.delete(c)
             db.commit()
+            if chat_memory:
+                chat_memory.forget(owner_id, character_id)
             for file in files:
                 (settings.image_directory / file).unlink(missing_ok=True)
 
@@ -463,6 +480,22 @@ def create_app(
                 for m in reversed(recent)
             ]
             frame = app.state.companion.chat_frame(db, c, body.content)
+            recalled = None
+            if chat_memory and c.owner_id:
+                # Progressively index the same character's committed user
+                # turns across every conversation. No assistant messages.
+                recent_ids = list(db.scalars(
+                    select(Message.id)
+                    .join(Conversation, Message.conversation_id == Conversation.id)
+                    .where(Conversation.character_id == c.id,
+                           Message.role == "user",
+                           Message.source_type == "user_chat")
+                    .order_by(Message.created_at.desc(), Message.id.desc())
+                    .limit(settings.chat_memory_backfill_limit)
+                ))
+                chat_memory.schedule_ids(c.owner_id, c.id, list(reversed(recent_ids)))
+                result = chat_memory.lookup(c.owner_id, c.id, body.content)
+                recalled = result.get("items") or None
             try:
                 context = chat_context(
                     Profile.model_validate(revision(db, c).profile_json),
@@ -470,6 +503,7 @@ def create_app(
                     body.content,
                     settings,
                     calendar_frame=frame,
+                    memory_frame=recalled,
                 )
             except ValueError as exc:
                 raise HTTPException(422, str(exc)) from None
@@ -478,11 +512,11 @@ def create_app(
                 raise ProviderError("The model did not return a valid reply.")
             # Both messages commit together. Failed remote calls leave neither a false reply nor a duplicate user turn.
             orders = allocate_timeline(db, conv.id, 2)
+            user_message = None
             for order, (role, content) in zip(
                 orders, (("user", body.content), ("assistant", response)), strict=True
             ):
-                db.add(
-                    Message(
+                message = Message(
                         conversation_id=conv.id,
                         timeline_order=order,
                         request_id=str(body.request_id),
@@ -491,10 +525,15 @@ def create_app(
                         profile_version=c.current_profile_version,
                         created_at=now(),
                     )
-                )
+                db.add(message)
+                if role == "user":
+                    user_message = message
             app.state.companion.remember(db, c, body.content, frame)
             conv.updated_at = c.updated_at = now()
             db.commit()
+            # Index only after the authoritative chat transaction commits.
+            if chat_memory and user_message is not None:
+                chat_memory.schedule_ids(c.owner_id, c.id, [user_message.id])
             return messages(db, conv.id)
 
     def portrait(db, cid, image_id):
@@ -689,6 +728,20 @@ def create_app(
     from .rehearsal_service import register_rehearsal
 
     register_rehearsal(app, factory, locks, settings, serialize)
+    if chat_memory:
+        from contextlib import asynccontextmanager
+
+        previous_lifespan = app.router.lifespan_context
+
+        @asynccontextmanager
+        async def chat_memory_lifespan(application):
+            async with previous_lifespan(application):
+                try:
+                    yield
+                finally:
+                    chat_memory.close()
+
+        app.router.lifespan_context = chat_memory_lifespan
     return app
 
 
